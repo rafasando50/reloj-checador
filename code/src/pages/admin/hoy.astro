@@ -1,0 +1,166 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import pool from "../../lib/db";
+
+// Protección: Solo admins
+const adminSession = Astro.cookies.get("admin_session");
+if (!adminSession) {
+  return Astro.redirect("/admin/login");
+}
+
+let attendance = [];
+try {
+  const [rows] = (await pool.execute(`
+    SELECT a.*, u.full_name 
+    FROM attendance a 
+    JOIN users u ON a.employee_id = u.employee_id 
+    WHERE DATE(a.timestamp) = CURDATE()
+    ORDER BY a.timestamp DESC
+  `)) as [any[], any];
+  attendance = rows;
+} catch (e) {
+  console.error(e);
+}
+---
+
+<Layout title="Turnos de Hoy">
+  <main class="contenedor-principal">
+    <div class="card-premium daily-card">
+      <h1
+        style="background: linear-gradient(to right, #273469 0%, #4A90E2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 900; font-size: 3.2rem; text-align: center; font-family: 'Inter', sans-serif; margin-bottom: 3.5rem; width: 100%;"
+      >
+        Asistencia
+      </h1>
+
+      <div class="tabla-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Empleado</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              attendance.length === 0 ? (
+                <tr>
+                  <td colspan="3" class="sin-registros">
+                    No hay registros hoy.
+                  </td>
+                </tr>
+              ) : (
+                attendance.map((row) => (
+                  <tr>
+                    <td class="nombre">{row.full_name}</td>
+                    <td>
+                      {row.tipo === "Entrada"
+                        ? new Date(row.timestamp).toLocaleTimeString()
+                        : "-"}
+                    </td>
+                    <td>
+                      {row.tipo === "Salida"
+                        ? new Date(row.timestamp).toLocaleTimeString()
+                        : "-"}
+                    </td>
+                  </tr>
+                ))
+              )
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="acciones-footer">
+        <button
+          onclick="window.location.reload()"
+          class="btn-premium primary"
+          style="min-width: 200px; height: 52px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; background: #4A90E2; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 auto; box-shadow: 0 8px 20px -4px rgba(74, 144, 226, 0.4);"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            ><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"
+            ></path><path d="M3 22v-6h6"></path><path
+              d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+          </svg>
+          Actualizar
+        </button>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .contenedor-principal {
+    padding: 3rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+  }
+
+  .daily-card {
+    width: 100%;
+    max-width: 1000px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3.5rem !important;
+  }
+
+  .tabla-container {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 2.5rem;
+    background: #f8fafc;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th {
+    background: #f1f5f9;
+    padding: 1.25rem;
+    text-align: center;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    font-weight: 800;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  td {
+    padding: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+    color: #1e293b;
+  }
+
+  .nombre {
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .sin-registros {
+    text-align: center;
+    color: #94a3b8;
+    padding: 4rem;
+    font-style: italic;
+  }
+
+  .acciones-footer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+</style>

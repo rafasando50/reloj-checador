@@ -1,0 +1,326 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Protección: Solo admins pueden entrar al escáner
+const adminSession = Astro.cookies.get("admin_session");
+if (!adminSession) {
+  return Astro.redirect("/admin/login");
+}
+---
+
+<Layout title="Scanner">
+  <main class="contenedor-principal">
+    <div class="card-premium scanner-card">
+      <div class="opciones-movimiento">
+        <label class="radio-btn">
+          <input type="radio" name="movimiento" value="Entrada" checked />
+          <span class="btn-premium primary radio-texto">Entrada</span>
+        </label>
+        <label class="radio-btn">
+          <input type="radio" name="movimiento" value="Salida" />
+          <span class="btn-premium outline radio-texto">Salida</span>
+        </label>
+      </div>
+
+      <div class="scanner-box">
+        <div id="reader"></div>
+        <div id="overlay" class="scanner-overlay">
+          <div class="overlay-contenido">
+            <span class="check-icon">✓</span>
+            <p id="overlay-texto">¡REGISTRADO!</p>
+          </div>
+        </div>
+
+        <div id="scanner-placeholder" class="scanner-placeholder">
+          <div class="icon-camera">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#94a3b8"
+              stroke-width="1.5"
+              ><rect x="5" y="2" width="14" height="20" rx="2" ry="2"
+              ></rect><path d="M12 18h.01"></path><path d="M8 6h8"></path><path
+                d="M8 10h8"></path><path d="M8 14h8"></path>
+            </svg>
+          </div>
+          <p>Solicitando permisos de cámara...</p>
+          <div class="info-icon-corner">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#94a3b8"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              ><circle cx="12" cy="12" r="10"></circle><line
+                x1="12"
+                y1="16"
+                x2="12"
+                y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline src="https://unpkg.com/html5-qrcode" type="text/javascript"
+></script>
+
+<script>
+  // @ts-nocheck
+  document.addEventListener("DOMContentLoaded", () => {
+    const placeholder = document.getElementById("scanner-placeholder");
+
+    function onScanSuccess(decodedText, decodedResult) {
+      const botonSeleccionado = document.querySelector(
+        'input[name="movimiento"]:checked',
+      );
+      if (!botonSeleccionado) return;
+
+      const tipoMovimiento = (botonSeleccionado as HTMLInputElement).value;
+      const overlayEl = document.getElementById("overlay");
+      const overlayTexto = document.getElementById("overlay-texto");
+
+      try {
+        html5QrcodeScanner.pause(true);
+      } catch (e) {}
+
+      fetch("/api/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empleado_id: decodedText,
+          tipo: tipoMovimiento,
+        }),
+      })
+        .then(async (response) => {
+          const data = await response.json();
+          if (response.ok) {
+            if (overlayEl && overlayTexto) {
+              const nombreDisplay = data.nombre || "Empleado";
+              overlayTexto.innerHTML = `<span style="font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px;">¡HOLA ${nombreDisplay
+                .split(" ")[0]
+                .toUpperCase()}!</span>${tipoMovimiento.toUpperCase()} REGISTRADA`;
+              overlayEl.style.display = "flex";
+            }
+          } else {
+            alert(data.error || "Error al registrar.");
+          }
+        })
+        .catch((error) => console.error("Error de conexión:", error))
+        .finally(() => {
+          setTimeout(() => {
+            try {
+              html5QrcodeScanner.resume();
+            } catch (e) {}
+            if (overlayEl) overlayEl.style.display = "none";
+          }, 2000);
+        });
+    }
+
+    let html5QrcodeScanner = new window.Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        supportedScanTypes: [0],
+      },
+      false,
+    );
+
+    html5QrcodeScanner.render(onScanSuccess, () => {});
+
+    setTimeout(() => {
+      if (placeholder) placeholder.style.opacity = "0";
+    }, 3000);
+    setTimeout(() => {
+      if (placeholder) placeholder.style.display = "none";
+    }, 3300);
+  });
+</script>
+
+<style>
+  .contenedor-principal {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .scanner-card {
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-weight: 900;
+    font-size: 3.2rem;
+    letter-spacing: -0.04em;
+    margin: 2rem auto 3rem auto;
+    line-height: 1.2;
+    background: linear-gradient(to right, #273469 0%, #4a90e2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .title-highlight {
+    color: #4a90e2;
+  }
+
+  .btn-premium {
+    min-width: 200px;
+    height: 52px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: "Inter", sans-serif;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
+
+  .btn-premium.primary {
+    background: #4a90e2;
+    color: white;
+    box-shadow: 0 8px 20px -4px rgba(74, 144, 226, 0.4);
+  }
+
+  .btn-premium.outline {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+  }
+
+  .opciones-movimiento {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .radio-btn {
+    cursor: pointer;
+    flex: 1;
+    max-width: 200px;
+  }
+  .radio-btn input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .radio-texto {
+    width: 100% !important;
+    min-width: 160px !important;
+  }
+
+  .radio-btn input:checked + .radio-texto {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 14px 0 rgba(74, 144, 226, 0.45);
+  }
+  .radio-btn input:not(:checked) + .radio-texto {
+    background: white !important;
+    color: var(--text-muted) !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+  }
+
+  .scanner-box {
+    position: relative;
+    background: #f8fafc;
+    border-radius: 24px;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    width: 100%;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scanner-placeholder {
+    position: absolute;
+    inset: 0;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: #64748b;
+    font-weight: 500;
+    z-index: 5;
+    transition: opacity 0.5s;
+  }
+
+  .scanner-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(16, 185, 129, 0.95);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    color: white;
+    backdrop-filter: blur(4px);
+  }
+
+  .check-icon {
+    font-size: 5rem;
+    font-weight: 900;
+  }
+  #overlay-texto {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    padding: 0 20px;
+  }
+
+  #reader {
+    width: 100%;
+    border: none !important;
+  }
+  :global(#reader video) {
+    border-radius: 18px;
+  }
+  :global(#reader img) {
+    display: none !important;
+  }
+  :global(#reader__dashboard_section_csr button) {
+    background: #4a90e2 !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+  }
+</style>

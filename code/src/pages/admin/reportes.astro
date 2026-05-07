@@ -1,0 +1,283 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Protección: Solo admins
+const adminSession = Astro.cookies.get("admin_session");
+if (!adminSession) {
+  return Astro.redirect("/admin/login");
+}
+---
+
+<Layout title="Reportes Globales">
+  <main class="contenedor-principal">
+    <div class="card-premium reports-card">
+      <h1
+        style="background: linear-gradient(to right, #273469 0%, #4A90E2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 900; font-size: 3.2rem; text-align: center; font-family: 'Inter', sans-serif; margin-bottom: 3.5rem; width: 100%;"
+      >
+        Registros
+      </h1>
+
+      <div class="filtros-seccion">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Desde:</label>
+            <input type="date" id="fecha-inicio" class="input-premium" />
+          </div>
+          <div class="input-group">
+            <label>Hasta:</label>
+            <input type="date" id="fecha-fin" class="input-premium" />
+          </div>
+          <div class="input-group">
+            <label>Empleado ID:</label>
+            <input
+              type="text"
+              id="empleado-id"
+              placeholder="Todos"
+              class="input-premium"
+            />
+          </div>
+        </div>
+
+        <div class="botones-filtros">
+          <button
+            id="btn-buscar"
+            class="btn-premium primary"
+            style="min-width: 180px; height: 52px; border-radius: 12px; font-weight: 800; font-size: 1rem; background: #4A90E2; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14px 0 rgba(74, 144, 226, 0.35);"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              ><circle cx="11" cy="11" r="8"></circle><line
+                x1="21"
+                y1="21"
+                x2="16.65"
+                y2="16.65"></line>
+            </svg>
+            Buscar
+          </button>
+          <button
+            id="btn-exportar"
+            class="btn-premium outline"
+            style="min-width: 180px; height: 52px; border-radius: 12px; font-weight: 800; font-size: 1rem; background: white; color: #64748b; border: 2px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              ><path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              ></path><polyline points="14 2 14 8 20 8"></polyline><line
+                x1="16"
+                y1="13"
+                x2="8"
+                y2="13"></line><line x1="16" y1="17" x2="8" y2="17"
+              ></line><polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Exportar
+          </button>
+        </div>
+      </div>
+
+      <div class="tabla-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Empleado</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-cuerpo">
+            <tr
+              ><td colspan="4" class="sin-registros"
+                >Usa los filtros para buscar registros.</td
+              >
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  // Script de búsqueda y exportación (mantenido)
+  document.getElementById("btn-buscar")?.addEventListener("click", async () => {
+    const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement)
+      .value;
+    const fin = (document.getElementById("fecha-fin") as HTMLInputElement)
+      .value;
+    const empId = (document.getElementById("empleado-id") as HTMLInputElement)
+      .value;
+
+    const res = await fetch(
+      `/api/reports?start=${inicio}&end=${fin}&employee_id=${empId}`,
+    );
+    const data = (await res.json()) as any[];
+
+    const cuerpo = document.getElementById("tabla-cuerpo");
+    if (cuerpo) {
+      if (data.length === 0) {
+        cuerpo.innerHTML =
+          '<tr><td colspan="4" class="sin-registros">No se encontraron registros.</td></tr>';
+      } else {
+        cuerpo.innerHTML = data
+          .map(
+            (r) => `
+          <tr>
+            <td class="nombre">${r.full_name}</td>
+            <td>${r.entrada ? new Date(r.entrada).toLocaleString() : "-"}</td>
+            <td>${r.salida ? new Date(r.salida).toLocaleString() : "-"}</td>
+            <td><span class="badge-status">${
+              r.salida ? "Completado" : "Pendiente"
+            }</span></td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+    }
+  });
+
+  document.getElementById("btn-exportar")?.addEventListener("click", () => {
+    const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement)
+      .value;
+    const fin = (document.getElementById("fecha-fin") as HTMLInputElement)
+      .value;
+    const empId = (document.getElementById("empleado-id") as HTMLInputElement)
+      .value;
+    window.location.href = `/api/reports/export?start=${inicio}&end=${fin}&employee_id=${empId}`;
+  });
+</script>
+
+<style>
+  .contenedor-principal {
+    padding: 3rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+  }
+
+  .reports-card {
+    width: 100%;
+    max-width: 1100px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3.5rem !important;
+  }
+
+  .filtros-seccion {
+    width: 100%;
+    margin-bottom: 3.5rem;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  .input-group label {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #273469;
+    text-align: center;
+    width: 100%;
+  }
+  .input-premium {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #f1f5f9;
+    border-radius: 14px;
+    font-size: 1rem;
+    color: #1e293b;
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .input-premium:focus {
+    border-color: #4a90e2;
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
+  }
+
+  .botones-filtros {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+  }
+
+  .tabla-container {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #f8fafc;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+  }
+  th {
+    background: #f1f5f9;
+    padding: 1.25rem;
+    text-align: center;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    font-weight: 800;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  td {
+    padding: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+  }
+
+  .nombre {
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .sin-registros {
+    text-align: center;
+    color: #94a3b8;
+    padding: 5rem;
+    font-style: italic;
+  }
+
+  .badge-status {
+    background: #f0f9ff;
+    color: #0ea5e9;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 5px 14px;
+    border-radius: 99px;
+    text-transform: uppercase;
+  }
+</style>
