@@ -1,0 +1,287 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Protección: Solo admins
+const adminSession = Astro.cookies.get("admin_session");
+if (!adminSession) {
+  return Astro.redirect("/admin/login");
+}
+
+const modules = [
+  {
+    title: "Escáner",
+    description: "Registrar entradas y salidas en tiempo real",
+    icon: "camera",
+    link: "/admin/scanner",
+    color: "#4A90E2",
+  },
+  {
+    title: "Hoy",
+    description: "Ver quién está trabajando en este momento",
+    icon: "calendar",
+    link: "/admin/hoy",
+    color: "#273469",
+  },
+  {
+    title: "Reportes",
+    description: "Historial completo y exportación a Excel",
+    icon: "file-text",
+    link: "/admin/reportes",
+    color: "#64748b",
+  },
+  {
+    title: "Personal",
+    description: "Administrar empleados, altas y bajas",
+    icon: "users",
+    link: "/admin/empleados",
+    color: "#1e293b",
+  },
+];
+---
+
+<Layout title="Panel de Control">
+  <main class="dashboard-container">
+    <div class="welcome-header">
+      <h1 class="gradient-text">Panel de Control</h1>
+    </div>
+
+    <div class="modules-grid">
+      {
+        modules.map((module) => (
+          <a href={module.link} class="module-card card-premium">
+            <div
+              class="icon-box"
+              style={`background: ${module.color}15; color: ${module.color};`}
+            >
+              {module.icon === "camera" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              )}
+              {module.icon === "calendar" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              )}
+              {module.icon === "file-text" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              )}
+              {module.icon === "users" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              )}
+            </div>
+            <div class="module-info">
+              <h2>{module.title}</h2>
+              <p>{module.description}</p>
+            </div>
+            <div class="arrow-indicator">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .dashboard-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .welcome-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .gradient-text {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, #273469 0%, #4a90e2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .module-card {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2.5rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 2px solid transparent;
+  }
+
+  .module-card:hover {
+    transform: translateY(-8px);
+    border-color: #e2e8f0;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
+  }
+
+  .icon-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .module-info h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1e293b;
+  }
+
+  .module-info p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.5;
+    font-weight: 500;
+    font-size: 1rem;
+  }
+
+  .arrow-indicator {
+    position: absolute;
+    right: 2.5rem;
+    color: #cbd5e1;
+    transition: all 0.3s;
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  .module-card:hover .arrow-indicator {
+    opacity: 1;
+    transform: translateX(0);
+    color: #4a90e2;
+  }
+
+  @media (max-width: 768px) {
+    .modules-grid {
+      grid-template-columns: 1fr;
+    }
+    .gradient-text {
+      font-size: 2.5rem;
+    }
+    .module-card {
+      padding: 2rem !important;
+    }
+  }
+
+  @media (max-width: 425px) {
+    .dashboard-container {
+      padding: 2rem 1rem;
+    }
+    .gradient-text {
+      font-size: 2.2rem;
+    }
+    .icon-box {
+      width: 60px;
+      height: 60px;
+    }
+    .icon-box svg {
+      width: 24px;
+      height: 24px;
+    }
+    .module-info h2 {
+      font-size: 1.3rem;
+    }
+    .module-info p {
+      font-size: 0.9rem;
+    }
+    .arrow-indicator {
+      display: none;
+    }
+  }
+</style>

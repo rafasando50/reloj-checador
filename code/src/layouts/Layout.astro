@@ -32,11 +32,13 @@ const isLoginPage = currentPath === "/" || currentPath === "/admin/login";
 <style>
 	html, body {
 		margin: 0;
-		width: 100%;
+		width: 100% !important;
+		min-width: 100% !important;
 		height: 100%;
     background: #f1f5f9;
     font-family: 'Inter', sans-serif;
     color: #1e293b;
+    overflow-x: hidden;
 	}
 
   /* Global Design Tokens based on reference image (Exact Colors) */
