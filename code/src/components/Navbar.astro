@@ -12,8 +12,12 @@ const logoLink = isAdmin ? "/admin/dashboard" : "/";
 <nav class="navbar">
   <div class="nav-container">
     <a href={logoLink} class="nav-logo">
-      <span class="logo-text">CHECADOR</span><span class="logo-dot">.</span>
+      <img src="/logonavbar.png" alt="Logo" class="navbar-logo-img" />
     </a>
+
+    <div class="nav-welcome-text">
+      Bienvenido a <span>EG ACCESS</span>
+    </div>
     
     <div class="nav-links">
       {/* Solo mostramos el Dashboard si NO estamos ya en el dashboard y somos admin */}
@@ -56,7 +60,7 @@ const logoLink = isAdmin ? "/admin/dashboard" : "/";
   .navbar {
     background: white;
     border-bottom: 1px solid #e2e8f0;
-    padding: 0.6rem 0;
+    padding: 0.3rem 0;
     position: fixed;
     top: 0;
     left: 0;
@@ -75,8 +79,20 @@ const logoLink = isAdmin ? "/admin/dashboard" : "/";
     align-items: center;
   }
 
-  .nav-logo { font-weight: 800; font-size: 1.35rem; color: #1e293b; letter-spacing: -0.5px; text-decoration: none; }
-  .logo-dot { color: #3b82f6; margin-left: 1px; }
+  .nav-logo { display: flex; align-items: center; text-decoration: none; }
+  .navbar-logo-img { height: 58px; width: auto; object-fit: contain; }
+
+  .nav-welcome-text {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.1rem;
+    color: #273469;
+    font-weight: 800;
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: -0.5px;
+  }
 
   .nav-links { display: flex; align-items: center; gap: 0.5rem; }
 
@@ -107,9 +123,13 @@ const logoLink = isAdmin ? "/admin/dashboard" : "/";
     background: #f0f7ff;
   }
 
+  @media (max-width: 1024px) {
+    .nav-welcome-text { display: none; }
+  }
+
   @media (max-width: 600px) {
     .nav-links span { display: none; }
     .nav-links a, .btn-logout { padding: 10px; }
-    .nav-logo .logo-text { font-size: 1.1rem; }
+    .navbar-logo-img { height: 28px; }
   }
 </style>

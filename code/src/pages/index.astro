@@ -1,5 +1,14 @@
 ---
 import Layout from "../layouts/Layout.astro";
+
+// Redirigir si ya hay sesión
+const session = Astro.cookies.get("session");
+if (session) {
+  return Astro.redirect("/credential");
+}
+
+// Prevenir caché para que el botón atrás siempre valide la sesión
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 ---
 
 <Layout title="Acceso de Empleados">
@@ -124,7 +133,7 @@ import Layout from "../layouts/Layout.astro";
       });
 
       if (response.ok) {
-        window.location.href = "/credential";
+        window.location.replace("/credential");
       } else {
         const errorDiv = document.getElementById("error-message");
         if (errorDiv) {
@@ -337,6 +346,8 @@ import Layout from "../layouts/Layout.astro";
   @media (max-width: 425px) {
     .contenedor-principal {
       padding: 1rem;
+      align-items: flex-start; /* Subir la tarjeta */
+      padding-top: 8vh; /* Espacio desde arriba */
     }
     .login-card {
       padding: 2.5rem !important;

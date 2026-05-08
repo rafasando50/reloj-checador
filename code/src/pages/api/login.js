@@ -12,7 +12,7 @@ export const POST = async ({ request, cookies }) => {
 
     if (!isValid) return new Response(JSON.stringify({ message: 'Clave incorrecta' }), { status: 401 });
 
-    cookies.set('session', `user-${user.id}`, { path: '/', httpOnly: true, maxAge: 60 * 60 * 24 });
+    cookies.set('session', `user-${user.id}`, { path: '/', httpOnly: true, maxAge: 60 * 60 * 24 * 365 });
     return new Response(JSON.stringify({ message: 'Ok' }), { status: 200 });
   } catch (e) { return new Response(JSON.stringify({ message: 'Error' }), { status: 500 }); }
 };

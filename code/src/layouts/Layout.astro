@@ -23,7 +23,7 @@ const isLoginPage = currentPath === "/" || currentPath === "/admin/login";
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 		<title>{title || 'Sistema de Asistencia'}</title>
 	</head>
-	<body>
+	<body class={(isLoginPage || hideNavbar) ? "login-body" : ""}>
 		{!isLoginPage && !hideNavbar && <Navbar />}
 		<slot />
 	</body>
@@ -45,8 +45,11 @@ const isLoginPage = currentPath === "/" || currentPath === "/admin/login";
     overflow-x: hidden;
     display: block;
     padding: 0;
-    padding-top: 64px; /* Espacio para el Navbar fixed */
 	}
+
+  body:not(.login-body) {
+    padding-top: 64px; /* Solo para páginas con navbar */
+  }
 
   /* Global Design Tokens based on reference image (Exact Colors) */
   :root {
@@ -71,6 +74,8 @@ const isLoginPage = currentPath === "/" || currentPath === "/admin/login";
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+
 
   .btn-premium {
     min-width: 200px;

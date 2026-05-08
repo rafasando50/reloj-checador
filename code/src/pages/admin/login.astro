@@ -1,5 +1,14 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+
+// Redirigir si ya hay sesión admin
+const adminSession = Astro.cookies.get("admin_session");
+if (adminSession) {
+  return Astro.redirect("/admin/dashboard");
+}
+
+// Prevenir caché para que el botón atrás siempre valide la sesión
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 ---
 
 <Layout title="Admin Login">
@@ -113,7 +122,7 @@ import Layout from "../../layouts/Layout.astro";
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) window.location.href = "/admin/dashboard";
+    if (res.ok) window.location.replace("/admin/dashboard");
     else
       document.getElementById("error-msg")!.textContent =
         "Credenciales Inválidas";
@@ -286,6 +295,8 @@ import Layout from "../../layouts/Layout.astro";
   @media (max-width: 425px) {
     .contenedor-principal {
       padding: 1rem;
+      align-items: flex-start; /* Subir la tarjeta */
+      padding-top: 8vh; /* Espacio desde arriba */
     }
     .login-card {
       padding: 2.5rem !important;
