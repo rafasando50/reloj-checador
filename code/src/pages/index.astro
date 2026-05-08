@@ -97,6 +97,9 @@ import Layout from "../layouts/Layout.astro";
             Iniciar Sesión
           </button>
         </form>
+        <div class="error-container">
+          <div id="error-message" class="error-message"></div>
+        </div>
 
         <div class="login-footer">
           <a href="/admin/login" class="admin-link">Acceso Administrativo</a>
@@ -123,9 +126,20 @@ import Layout from "../layouts/Layout.astro";
       if (response.ok) {
         window.location.href = "/credential";
       } else {
-        alert("Credenciales incorrectas");
+        const errorDiv = document.getElementById("error-message");
+        if (errorDiv) {
+          errorDiv.textContent = "ID de empleado o contraseña incorrectos";
+          errorDiv.classList.add("visible");
+        }
       }
     });
+
+  // Limpiar error al escribir
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', () => {
+      document.getElementById("error-message")?.classList.remove("visible");
+    });
+  });
 </script>
 
 <style>
@@ -255,6 +269,40 @@ import Layout from "../layouts/Layout.astro";
   input:focus {
     border-color: #4a90e2;
     outline: none;
+  }
+
+  .error-container {
+    position: relative;
+    height: 0;
+    width: 100%;
+    z-index: 10;
+  }
+
+  .error-message {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: none;
+    padding: 0.6rem;
+    background: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fee2e2;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+  }
+
+  .error-message.visible {
+    display: block;
+    animation: shake 0.4s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
   }
 
   .login-footer {

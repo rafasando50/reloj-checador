@@ -26,7 +26,7 @@ if (!adminSession) {
         <div id="reader"></div>
         <div id="overlay" class="scanner-overlay">
           <div class="overlay-contenido">
-            <span class="check-icon">✓</span>
+            <span id="overlay-icon" class="check-icon">✓</span>
             <p id="overlay-texto">¡REGISTRADO!</p>
           </div>
         </div>
@@ -103,8 +103,12 @@ if (!adminSession) {
       })
         .then(async (response) => {
           const data = await response.json();
+          const overlayIcon = document.getElementById("overlay-icon");
+          
           if (response.ok) {
             if (overlayEl && overlayTexto) {
+              overlayEl.classList.remove("error");
+              if (overlayIcon) overlayIcon.textContent = "✓";
               const nombreDisplay = data.nombre || "Empleado";
               overlayTexto.innerHTML = `<span style="font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px;">¡HOLA ${nombreDisplay
                 .split(" ")[0]
@@ -112,7 +116,12 @@ if (!adminSession) {
               overlayEl.style.display = "flex";
             }
           } else {
-            alert(data.error || "Error al registrar.");
+            if (overlayEl && overlayTexto) {
+              overlayEl.classList.add("error");
+              if (overlayIcon) overlayIcon.textContent = "✕";
+              overlayTexto.innerHTML = `<span style="font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px;">ERROR</span>${data.error || "Error al registrar"}`;
+              overlayEl.style.display = "flex";
+            }
           }
         })
         .catch((error) => console.error("Error de conexión:", error))
@@ -291,7 +300,12 @@ if (!adminSession) {
     align-items: center;
     z-index: 10;
     color: white;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+
+  .scanner-overlay.error {
+    background-color: rgba(239, 68, 68, 0.95);
   }
 
   .check-icon {
