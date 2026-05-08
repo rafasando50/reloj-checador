@@ -6,6 +6,13 @@ export const POST = async ({ request }) => {
     const parts = qrString.split('|');
     if (parts.length !== 3 || parts[2] !== 'EINSUR2026') return new Response(JSON.stringify({ error: 'QR inválido' }), { status: 400 });
 
+    const qrTimestamp = parseInt(parts[1]);
+    const ahora = Date.now();
+    // Expirar QR después de 15 segundos para evitar capturas de pantalla
+    if (isNaN(qrTimestamp) || (ahora - qrTimestamp) > 15000) {
+      return new Response(JSON.stringify({ error: 'El QR ha expirado (Captura no válida)' }), { status: 400 });
+    }
+
     const employee_id = parts[0];
     const [empRows] = await pool.execute('SELECT full_name FROM users WHERE employee_id = ? AND active = 1', [employee_id]);
     

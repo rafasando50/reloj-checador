@@ -16,5 +16,18 @@ export const GET = async ({ url }) => {
   let params = [`${start} 00:00:00`, `${end} 23:59:59`];
   if (empId) { query += ' AND r.empleado_id = ?'; params.push(empId); }
   const [rows] = await pool.execute(query + ' ORDER BY entrada DESC', params);
-  return new Response(JSON.stringify(rows), { status: 200 });
+
+  // Calcular puntualidad
+  const data = rows.map(r => {
+    let puntualidad = 'A Tiempo';
+    if (r.entrada) {
+      const hora = new Date(r.entrada);
+      const mins = hora.getHours() * 60 + hora.getMinutes();
+      if (mins > (8 * 60 + 16)) puntualidad = 'Falta';
+      else if (mins > (8 * 60 + 6)) puntualidad = 'Retardo';
+    }
+    return { ...r, puntualidad };
+  });
+
+  return new Response(JSON.stringify(data), { status: 200 });
 };

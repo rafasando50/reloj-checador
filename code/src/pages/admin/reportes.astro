@@ -28,6 +28,21 @@ if (!adminSession) {
             <input type="date" id="fecha-fin" class="input-premium" />
           </div>
           <div class="input-group">
+            <label>Empresa:</label>
+            <div class="custom-select-wrapper">
+              <input type="hidden" id="filtro-empresa" value="" />
+              <div class="custom-select-trigger" id="company-trigger">
+                <span id="selected-company-label">Todas</span>
+                <svg class="arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <div class="custom-options" id="company-options">
+                <div class="option selected" data-value="">Todas</div>
+                <div class="option" data-value="Einsur">Einsur</div>
+                <div class="option" data-value="Innova">Innova</div>
+              </div>
+            </div>
+          </div>
+          <div class="input-group">
             <label>Empleado ID:</label>
             <input
               type="text"
@@ -99,13 +114,14 @@ if (!adminSession) {
               <th>Entrada</th>
               <th>Salida</th>
               <th>Estado</th>
+              <th>Puntualidad</th>
             </tr>
           </thead>
           <tbody id="tabla-cuerpo">
-            <tr
-              ><td colspan="4" class="sin-registros"
-                >Usa los filtros para buscar registros.</td
-              >
+            <tr>
+              <td colspan="5" class="sin-registros">
+                Usa los filtros para buscar registros.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -115,14 +131,51 @@ if (!adminSession) {
 </Layout>
 
 <script>
-  // Script de búsqueda y exportación (mantenido)
-  document.addEventListener('DOMContentLoaded', () => {
+  // Lógica para el Custom Dropdown
+  const trigger = document.getElementById('company-trigger');
+  const options = document.getElementById('company-options');
+  const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
+
+  trigger?.addEventListener('click', () => {
+    options?.classList.toggle('active');
+    trigger?.classList.toggle('active');
+  });
+
+  document.querySelectorAll('.option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const val = (opt as HTMLElement).dataset.value || '';
+      const label = (opt as HTMLElement).innerText;
+      
+      if (hiddenInput) hiddenInput.value = val;
+      const labelEl = document.getElementById('selected-company-label');
+      if (labelEl) labelEl.innerText = label;
+      
+      document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      
+      options?.classList.remove('active');
+      trigger?.classList.remove('active');
+      
+      // Auto-buscar al cambiar empresa (opcional, igual que en empleados)
+      document.getElementById("btn-buscar")?.click();
+    });
+  });
+
+  window.addEventListener('click', (e) => {
+    if (!trigger?.contains(e.target as Node) && !options?.contains(e.target as Node)) {
+      options?.classList.remove('active');
+      trigger?.classList.remove('active');
+    }
+  });
+
+  // Script de búsqueda y exportación
+  document.addEventListener("DOMContentLoaded", () => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     const formatDate = (date: Date) => {
-      const d = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-      return d.toISOString().split('T')[0];
+      const d = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      return d.toISOString().split("T")[0];
     };
 
     const inputInicio = document.getElementById("fecha-inicio") as HTMLInputElement;
@@ -131,20 +184,17 @@ if (!adminSession) {
     if (inputInicio && !inputInicio.value) inputInicio.value = formatDate(firstDay);
     if (inputFin && !inputFin.value) inputFin.value = formatDate(now);
 
-    // Búsqueda inicial automática
     document.getElementById("btn-buscar")?.click();
   });
 
   document.getElementById("btn-buscar")?.addEventListener("click", async () => {
-    const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement)
-      .value;
-    const fin = (document.getElementById("fecha-fin") as HTMLInputElement)
-      .value;
-    const empId = (document.getElementById("empleado-id") as HTMLInputElement)
-      .value;
+    const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement).value;
+    const fin = (document.getElementById("fecha-fin") as HTMLInputElement).value;
+    const empId = (document.getElementById("empleado-id") as HTMLInputElement).value;
+    const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement).value;
 
     const res = await fetch(
-      `/api/reports?start=${inicio}&end=${fin}&employee_id=${empId}`,
+      `/api/reports?start=${inicio}&end=${fin}&employee_id=${empId}&company=${empresa}`,
     );
     const data = (await res.json()) as any[];
 
@@ -152,7 +202,7 @@ if (!adminSession) {
     if (cuerpo) {
       if (data.length === 0) {
         cuerpo.innerHTML =
-          '<tr><td colspan="4" class="sin-registros">No se encontraron registros.</td></tr>';
+          '<tr><td colspan="5" class="sin-registros">No se encontraron registros.</td></tr>';
       } else {
         cuerpo.innerHTML = data
           .map(
@@ -161,9 +211,16 @@ if (!adminSession) {
             <td class="nombre">${r.full_name}</td>
             <td>${r.entrada ? new Date(r.entrada).toLocaleString() : "-"}</td>
             <td>${r.salida ? new Date(r.salida).toLocaleString() : "-"}</td>
-            <td><span class="badge-status">${
-              r.salida ? "Completado" : "Pendiente"
-            }</span></td>
+            <td>
+              <span class="badge-status ${r.salida ? 'completado' : 'pendiente'}">
+                ${r.salida ? "Completado" : "En Turno"}
+              </span>
+            </td>
+            <td>
+              <span class="badge-puntualidad ${r.puntualidad.toLowerCase().replace(' ', '-')}">
+                ${r.puntualidad}
+              </span>
+            </td>
           </tr>
         `,
           )
@@ -173,13 +230,11 @@ if (!adminSession) {
   });
 
   document.getElementById("btn-exportar")?.addEventListener("click", () => {
-    const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement)
-      .value;
-    const fin = (document.getElementById("fecha-fin") as HTMLInputElement)
-      .value;
-    const empId = (document.getElementById("empleado-id") as HTMLInputElement)
-      .value;
-    window.location.href = `/api/reports/export?start=${inicio}&end=${fin}&employee_id=${empId}`;
+    const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement).value;
+    const fin = (document.getElementById("fecha-fin") as HTMLInputElement).value;
+    const empId = (document.getElementById("empleado-id") as HTMLInputElement).value;
+    const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement).value;
+    window.location.href = `/api/reports/export?start=${inicio}&end=${fin}&employee_id=${empId}&company=${empresa}`;
   });
 </script>
 
@@ -208,8 +263,8 @@ if (!adminSession) {
   }
   .form-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
     margin-bottom: 2.5rem;
   }
 
@@ -217,11 +272,11 @@ if (!adminSession) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
   }
   .input-group label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 800;
     color: #273469;
     text-align: center;
@@ -229,13 +284,14 @@ if (!adminSession) {
   }
   .input-premium {
     width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #f1f5f9;
-    border-radius: 14px;
-    font-size: 1rem;
+    padding: 12px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
     color: #1e293b;
     background: #f8fafc;
     transition: all 0.2s;
+    box-sizing: border-box;
   }
   .input-premium:focus {
     border-color: #4a90e2;
@@ -243,6 +299,38 @@ if (!adminSession) {
     outline: none;
     box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
   }
+
+  /* Custom Select Styles (from empleados.astro) */
+  .custom-select-wrapper { position: relative; width: 100%; }
+  .custom-select-trigger { 
+    width: 100%;
+    padding: 12px 16px; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 12px;
+    background: #f8fafc; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-weight: 500; 
+    font-size: 0.95rem;
+    color: #1e293b;
+    box-sizing: border-box;
+  }
+  .custom-select-trigger.active { border-color: #4a90e2; background: white; }
+  .custom-select-trigger.active .arrow { transform: rotate(180deg); }
+  .custom-select-trigger .arrow { transition: transform 0.3s; color: #94a3b8; }
+  
+  .custom-options { 
+    position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: white; 
+    border: 2px solid #e2e8f0; border-radius: 12px; z-index: 100; display: none; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  .custom-options.active { display: block; }
+  .option { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: #475569; text-align: left; }
+  .option:hover { background: #f1f5f9; color: #4a90e2; }
+  .option.selected { background: #eff6ff; color: #4a90e2; font-weight: 700; }
 
   .botones-filtros {
     display: flex;
@@ -260,13 +348,13 @@ if (!adminSession) {
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px;
+    min-width: 900px;
   }
   th {
     background: #f1f5f9;
     padding: 1.25rem;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #475569;
@@ -274,9 +362,14 @@ if (!adminSession) {
     border-bottom: 1px solid #e2e8f0;
   }
   td {
-    padding: 1.25rem;
+    padding: 2rem 1.25rem;
     border-top: 1px solid #e2e8f0;
     text-align: center;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  tr {
+    height: 100px;
   }
 
   .nombre {
@@ -292,13 +385,34 @@ if (!adminSession) {
     font-weight: 500;
   }
 
-  .badge-status {
-    background: #f0f9ff;
-    color: #0ea5e9;
-    font-size: 0.75rem;
-    font-weight: 800;
-    padding: 5px 14px;
-    border-radius: 99px;
+  /* Badges */
+  :global(.badge-status), :global(.badge-puntualidad) {
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 6px 12px;
+    border-radius: 6px;
     text-transform: uppercase;
+    display: inline-block;
+    letter-spacing: 0.02em;
   }
+  :global(.badge-status.completado) { background: #e1fdec !important; color: #065f46 !important; border: 1px solid #34d399; }
+  :global(.badge-status.pendiente) { background: #fff9db !important; color: #92400e !important; border: 1px solid #fbbf24; }
+  :global(.badge-puntualidad.a-tiempo) { background: #ecfdf5 !important; color: #059669 !important; border: 1px solid #6ee7b7; }
+  :global(.badge-puntualidad.retardo) { background: #fffbeb !important; color: #d97706 !important; border: 1px solid #fcd34d; }
+  :global(.badge-puntualidad.falta) { background: #fef2f2 !important; color: #dc2626 !important; border: 1px solid #fca5a5; }
+
+  .btn-premium {
+    padding: 12px 24px;
+    border: none;
+    cursor: pointer;
+    font-weight: 800;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .btn-premium.primary { background: #4a90e2; color: white; }
+  .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
 </style>
