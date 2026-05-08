@@ -1,20 +1,28 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
+import pool from "../../lib/db";
+
 // Protección: Solo admins
 const adminSession = Astro.cookies.get("admin_session");
 if (!adminSession) {
   return Astro.redirect("/admin/login");
+}
+
+let dbCompanies = [];
+try {
+  const [compRows] = await pool.execute('SELECT * FROM companies ORDER BY name ASC');
+  dbCompanies = compRows as any[];
+} catch (e) {
+  console.error(e);
 }
 ---
 
 <Layout title="Reportes Globales">
   <main class="contenedor-principal">
     <div class="card-premium reports-card">
-      <h1
-        style="background: linear-gradient(to right, #273469 0%, #4A90E2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 900; font-size: 3.2rem; text-align: center; font-family: 'Inter', sans-serif; margin-bottom: 3.5rem; width: 100%;"
-      >
-        Registros
+      <h1 class="titulo-principal">
+        Reportes
       </h1>
 
       <div class="filtros-seccion">
@@ -37,8 +45,9 @@ if (!adminSession) {
               </div>
               <div class="custom-options" id="company-options">
                 <div class="option selected" data-value="">Todas</div>
-                <div class="option" data-value="Einsur">Einsur</div>
-                <div class="option" data-value="Innova">Innova</div>
+                {dbCompanies.map((c) => (
+                  <div class="option" data-value={c.name}>{c.name}</div>
+                ))}
               </div>
             </div>
           </div>
@@ -56,8 +65,7 @@ if (!adminSession) {
         <div class="botones-filtros">
           <button
             id="btn-buscar"
-            class="btn-premium primary"
-            style="min-width: 180px; height: 52px; border-radius: 12px; font-weight: 800; font-size: 1rem; background: #4A90E2; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14px 0 rgba(74, 144, 226, 0.35);"
+            class="btn-premium primary btn-action"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -79,8 +87,7 @@ if (!adminSession) {
           </button>
           <button
             id="btn-exportar"
-            class="btn-premium outline"
-            style="min-width: 180px; height: 52px; border-radius: 12px; font-weight: 800; font-size: 1rem; background: white; color: #64748b; border: 2px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;"
+            class="btn-premium outline btn-action"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -240,7 +247,7 @@ if (!adminSession) {
 
 <style>
   .contenedor-principal {
-    padding: 3rem 1rem;
+    padding: 3rem 1.5rem;
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
@@ -255,6 +262,20 @@ if (!adminSession) {
     flex-direction: column;
     align-items: center;
     padding: 3.5rem !important;
+    position: relative;
+  }
+
+  .titulo-principal {
+    background: linear-gradient(to right, #273469 0%, #4A90E2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 900;
+    font-size: 3.2rem;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 3.5rem;
+    width: 100%;
   }
 
   .filtros-seccion {
@@ -279,7 +300,7 @@ if (!adminSession) {
     font-size: 0.85rem;
     font-weight: 800;
     color: #273469;
-    text-align: center;
+    text-align: left;
     width: 100%;
   }
   .input-premium {
@@ -292,6 +313,7 @@ if (!adminSession) {
     background: #f8fafc;
     transition: all 0.2s;
     box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
   }
   .input-premium:focus {
     border-color: #4a90e2;
@@ -300,7 +322,7 @@ if (!adminSession) {
     box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
   }
 
-  /* Custom Select Styles (from empleados.astro) */
+  /* Custom Select Styles */
   .custom-select-wrapper { position: relative; width: 100%; }
   .custom-select-trigger { 
     width: 100%;
@@ -338,17 +360,22 @@ if (!adminSession) {
     justify-content: center;
   }
 
+  .btn-action {
+    min-width: 180px;
+    height: 52px;
+  }
+
   .tabla-container {
     width: 100%;
     border: 1px solid #e2e8f0;
     border-radius: 20px;
-    overflow: hidden;
+    overflow-x: auto;
     background: #f8fafc;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 800px;
   }
   th {
     background: #f1f5f9;
@@ -362,14 +389,14 @@ if (!adminSession) {
     border-bottom: 1px solid #e2e8f0;
   }
   td {
-    padding: 2rem 1.25rem;
+    padding: 1.5rem 1.25rem;
     border-top: 1px solid #e2e8f0;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.5;
   }
-  tr {
-    height: 100px;
+  tr:hover {
+    background: #f1f5f9;
   }
 
   .nombre {
@@ -412,7 +439,44 @@ if (!adminSession) {
     justify-content: center;
     gap: 10px;
     transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
   }
-  .btn-premium.primary { background: #4a90e2; color: white; }
+  .btn-premium.primary { background: #4a90e2; color: white; box-shadow: 0 4px 14px 0 rgba(74, 144, 226, 0.35); }
   .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .contenedor-principal { padding: 2rem 1.25rem; }
+    .reports-card { padding: 2rem !important; }
+    .titulo-principal { font-size: 2.5rem; margin-bottom: 2.5rem; }
+    .form-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 425px) {
+    .contenedor-principal { padding: 1rem 0.5rem; }
+    .reports-card { 
+      padding: 1.5rem !important; 
+      border-radius: 16px;
+      margin-top: -1.5rem;
+    }
+    .titulo-principal { font-size: 2rem; margin-bottom: 1.5rem; text-align: left; }
+    .form-grid { grid-template-columns: 1fr; gap: 0.8rem; margin-bottom: 1.5rem; }
+    .botones-filtros { flex-direction: column; gap: 0.8rem; width: 100%; }
+    .btn-action { width: 100%; min-width: 0; }
+    .tabla-container { border-radius: 12px; }
+    td { font-size: 0.85rem; padding: 1rem 0.75rem; }
+    th { padding: 1rem 0.75rem; }
+  }
+
+  @media (max-width: 375px) {
+    .reports-card { padding: 1.25rem !important; margin-top: -2rem; }
+    .titulo-principal { font-size: 1.8rem; }
+  }
+
+  @media (max-width: 320px) {
+    .contenedor-principal { padding: 0.5rem 0.25rem; }
+    .reports-card { padding: 1rem !important; margin-top: -2.5rem; }
+    .titulo-principal { font-size: 1.6rem; margin-bottom: 1rem; }
+    .btn-premium { height: 46px; font-size: 0.9rem; }
+  }
 </style>

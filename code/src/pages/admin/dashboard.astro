@@ -41,6 +41,16 @@ const modules = [
 
 <Layout title="Panel de Control">
   <main class="dashboard-container">
+    {/* Fondo industrial solo para desktop */}
+    <div class="desktop-bg">
+      <img
+        src="/images/dashboard-bg.png"
+        alt="Industrial Background"
+        class="bg-img"
+      />
+      <div class="bg-overlay"></div>
+    </div>
+
     <div class="welcome-header">
       <h1 class="gradient-text">Panel de Control</h1>
     </div>
@@ -154,18 +164,91 @@ const modules = [
 
 <style>
   .dashboard-container {
+    width: 100%;
     max-width: 1000px;
     margin: 0 auto;
     padding: 4rem 1.5rem;
-    min-height: 80vh;
+    min-height: auto; /* Ajuste automático para móvil */
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Desktop Background */
+  .desktop-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -10; /* Muy al fondo */
+    display: none;
+    overflow: hidden;
+  }
+
+  .bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.6) contrast(1.1);
+  }
+
+  .bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.6) 0%,
+      rgba(15, 23, 42, 0.8) 100%
+    );
+    backdrop-filter: blur(2px);
+  }
+
+  @media (min-width: 1024px) {
+    .desktop-bg {
+      display: block;
+    }
+    .dashboard-container {
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      background: transparent !important;
+      justify-content: flex-start;
+      padding-top: 8vh;
+    }
+    .gradient-text {
+      -webkit-text-fill-color: transparent !important;
+      background: linear-gradient(
+        to right,
+        #4a90e2 0%,
+        #ffffff 50%,
+        #4a90e2 100%
+      ) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      text-shadow: none !important;
+      animation: shine 4s linear infinite !important;
+    }
+    .subtitle {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+    .module-card {
+      background: white !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
+      border-radius: 24px !important;
+    }
+  }
+
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
   }
 
   .welcome-header {
     text-align: center;
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 10;
   }
 
   .gradient-text {
@@ -188,6 +271,8 @@ const modules = [
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
+    position: relative;
+    z-index: 10;
   }
 
   .module-card {
@@ -199,6 +284,7 @@ const modules = [
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     border: 2px solid transparent;
+    border-radius: 24px;
   }
 
   .module-card:hover {
@@ -248,32 +334,6 @@ const modules = [
   }
 
   @media (max-width: 768px) {
-    .modules-grid {
-      grid-template-columns: 1fr;
-    }
-    .gradient-text {
-      font-size: 2.5rem;
-    }
-    .module-card {
-      padding: 2rem !important;
-    }
-  }
-
-  @media (max-width: 425px) {
-    .dashboard-container {
-      padding: 2rem 1rem;
-    }
-    .gradient-text {
-      font-size: 2.2rem;
-    }
-    .icon-box {
-      width: 60px;
-      height: 60px;
-    }
-    .icon-box svg {
-      width: 24px;
-      height: 24px;
-    }
     .module-info h2 {
       font-size: 1.3rem;
     }
@@ -282,6 +342,81 @@ const modules = [
     }
     .arrow-indicator {
       display: none;
+    }
+  }
+
+  @media (max-width: 425px) {
+    .dashboard-container {
+      padding: 0 1rem 1rem 1rem !important;
+      margin-top: -1.2rem; /* Aumentado de -0.5rem */
+      justify-content: flex-start !important;
+    }
+    .welcome-header {
+      margin-bottom: 0.3rem; /* Aún más pequeño */
+      text-align: left;
+      margin-top: 0 !important;
+    }
+    .gradient-text {
+      font-size: 2.2rem;
+    }
+    .subtitle {
+      font-size: 1rem;
+    }
+    .modules-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .module-card {
+      padding: 1rem !important;
+      gap: 1rem;
+      border-radius: 16px;
+    }
+    .module-icon {
+      width: 40px;
+      height: 40px;
+    }
+    .module-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.1rem;
+    }
+    .module-card p {
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (max-width: 320px) {
+    .dashboard-container {
+      padding: 0 0.5rem 0.5rem 0.5rem !important;
+      margin-top: -1.8rem; /* Elevación máxima */
+    }
+    .welcome-header {
+      margin-bottom: 0.2rem;
+    }
+    .gradient-text {
+      font-size: 1.8rem;
+      margin-bottom: 0;
+    }
+    .modules-grid {
+      gap: 0.6rem;
+    }
+    .module-card {
+      padding: 1rem !important;
+      gap: 1rem;
+    }
+    .icon-box {
+      width: 45px;
+      height: 45px;
+    }
+    .icon-box svg {
+      width: 22px;
+      height: 22px;
+    }
+    .module-info h2 {
+      font-size: 1rem;
+    }
+    .module-info p {
+      font-size: 0.75rem;
     }
   }
 </style>

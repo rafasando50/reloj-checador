@@ -1,19 +1,27 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
+import pool from "../../lib/db";
+
 // Protección: Solo admins
 const adminSession = Astro.cookies.get("admin_session");
 if (!adminSession) {
   return Astro.redirect("/admin/login");
+}
+
+let dbCompanies = [];
+try {
+  const [compRows] = await pool.execute('SELECT * FROM companies ORDER BY name ASC');
+  dbCompanies = compRows as any[];
+} catch (e) {
+  console.error(e);
 }
 ---
 
 <Layout title="Asistencia Diaria">
   <main class="contenedor-principal">
     <div class="card-premium daily-card">
-      <h1
-        style="background: linear-gradient(to right, #273469 0%, #4A90E2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 900; font-size: 3.2rem; text-align: center; font-family: 'Inter', sans-serif; margin-bottom: 3.5rem; width: 100%;"
-      >
+      <h1 class="titulo-principal">
         Asistencia Diaria
       </h1>
 
@@ -29,8 +37,9 @@ if (!adminSession) {
               </div>
               <div class="custom-options" id="company-options">
                 <div class="option selected" data-value="">Todas</div>
-                <div class="option" data-value="Einsur">Einsur</div>
-                <div class="option" data-value="Innova">Innova</div>
+                {dbCompanies.map((c) => (
+                  <div class="option" data-value={c.name}>{c.name}</div>
+                ))}
               </div>
             </div>
           </div>
@@ -154,8 +163,22 @@ if (!adminSession) {
 </script>
 
 <style>
-  .contenedor-principal { padding: 3rem 1rem; max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; }
-  .daily-card { width: 100%; max-width: 1000px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 3.5rem !important; }
+  .contenedor-principal { padding: 3rem 1.5rem; max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; }
+  .daily-card { width: 100%; max-width: 1000px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 3.5rem !important; position: relative; }
+  
+  .titulo-principal {
+    background: linear-gradient(to right, #273469 0%, #4A90E2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 900;
+    font-size: 3.2rem;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 3.5rem;
+    width: 100%;
+  }
+
   .filtros-seccion { width: 100%; margin-bottom: 3rem; }
   
   .filtros-grid { 
@@ -163,7 +186,7 @@ if (!adminSession) {
     grid-template-columns: 140px 1fr 140px; 
     gap: 1.5rem; 
     align-items: flex-end; 
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
   }
 
@@ -210,8 +233,9 @@ if (!adminSession) {
   .tabla-container { width: 100%; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; margin-bottom: 2.5rem; background: #f8fafc; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #f1f5f9; padding: 1.25rem; text-align: center; font-size: 0.75rem; font-weight: 800; color: #475569; }
-  td { padding: 2rem 1.25rem; border-top: 1px solid #e2e8f0; text-align: center; font-size: 1rem; }
-  tr { height: 100px; }
+  td { padding: 1.5rem 1.25rem; border-top: 1px solid #e2e8f0; text-align: center; font-size: 1rem; }
+  tr { transition: background 0.2s; }
+  tr:hover { background: #f8fafc; }
   .nombre { font-weight: 700; color: #1e293b; }
   .sin-registros { text-align: center; color: #94a3b8; padding: 4rem; font-style: italic; }
 
@@ -224,4 +248,45 @@ if (!adminSession) {
   :global(.badge-puntualidad.falta) { background: #fef2f2 !important; color: #dc2626 !important; border: 1px solid #fca5a5; }
 
   .acciones-footer { width: 100%; display: flex; justify-content: center; }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .contenedor-principal { padding: 2rem 1rem; }
+    .daily-card { padding: 2rem !important; }
+    .titulo-principal { font-size: 2.5rem; margin-bottom: 2rem; }
+    .filtros-grid { grid-template-columns: 1fr 1fr; max-width: 100%; }
+    .button-group { grid-column: span 2; }
+    th:nth-child(4), td:nth-child(4) { display: none; } /* Ocultar Estado en tablet */
+  }
+
+  @media (max-width: 425px) {
+    .contenedor-principal { padding: 1rem 0.5rem; }
+    .daily-card { 
+      padding: 1.5rem !important; 
+      border-radius: 16px; 
+      margin-top: -1.5rem; /* Subir la tarjeta */
+    }
+    .titulo-principal { font-size: 2rem; margin-bottom: 1.5rem; text-align: left; width: 100%; }
+    .filtros-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .button-group { grid-column: span 1; }
+    
+    .tabla-container { border-radius: 12px; margin-bottom: 1.5rem; }
+    th { padding: 0.8rem 0.5rem; font-size: 0.7rem; }
+    td { padding: 1rem 0.5rem; font-size: 0.85rem; }
+    th:nth-child(5), td:nth-child(5) { display: none; } /* Ocultar Puntualidad en móvil pequeño */
+  }
+
+  @media (max-width: 375px) {
+    .daily-card { padding: 1rem !important; margin-top: -2rem; }
+    .titulo-principal { font-size: 1.8rem; }
+    th:nth-child(3), td:nth-child(3) { display: none; } /* Ocultar Salida en móvil muy pequeño */
+  }
+
+  @media (max-width: 320px) {
+    .contenedor-principal { padding: 0.5rem 0.25rem; }
+    .daily-card { padding: 0.8rem !important; margin-top: -2.5rem; }
+    .titulo-principal { font-size: 1.6rem; margin-bottom: 1rem; }
+    td { font-size: 0.8rem; }
+    .btn-premium { height: 44px; font-size: 0.9rem; }
+  }
 </style>

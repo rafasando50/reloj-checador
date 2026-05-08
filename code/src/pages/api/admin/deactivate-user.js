@@ -6,10 +6,11 @@ export const POST = async ({ url }) => {
     if (!id) {
       return new Response(JSON.stringify({ error: 'ID no proporcionado' }), { status: 400 });
     }
-    await pool.execute('UPDATE users SET active = 1 WHERE id = ?', [id]);
-    return new Response(JSON.stringify({ message: 'Usuario reactivado correctamente' }), { status: 200 });
+    // Borrado lógico: Solo cambiamos el estado a inactivo
+    await pool.execute('UPDATE users SET active = 0 WHERE id = ?', [id]);
+    return new Response(JSON.stringify({ message: 'Usuario desactivado correctamente' }), { status: 200 });
   } catch (error) {
-    console.error('Error al reactivar usuario:', error);
+    console.error('Error al desactivar usuario:', error);
     return new Response(JSON.stringify({ error: 'Error interno del servidor' }), { status: 500 });
   }
 };

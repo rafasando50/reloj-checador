@@ -7,6 +7,9 @@ export default defineConfig({
   adapter: node({
     mode: 'standalone'
   }),
+  security: {
+    checkOrigin: false
+  },
   vite: {
     server: {
       allowedHosts: ['borrowing-anvil-regular.ngrok-free.dev']
