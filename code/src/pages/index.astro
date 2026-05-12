@@ -1,15 +1,16 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
-// Redirigir si ya hay sesión
-const session = Astro.cookies.get("session");
-if (session) {
-  return Astro.redirect("/credential");
-}
-
 // Prevenir caché para que el botón atrás siempre valide la sesión
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+// En modo estático esto se ignora mayormente, pero lo dejamos por si acaso
 ---
+
+<script>
+  // Verificar sesión en el cliente
+  if (document.cookie.split(';').some((item) => item.trim().startsWith('session='))) {
+    window.location.replace("/credential");
+  }
+</script>
 
 <Layout title="Acceso de Empleados">
   <main class="contenedor-principal">
@@ -126,7 +127,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
       const data = Object.fromEntries(
         new FormData(e.target as HTMLFormElement),
       );
-      const response = await fetch("/api/login", {
+      const response = await fetch("/api/login.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

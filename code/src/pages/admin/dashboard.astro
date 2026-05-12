@@ -1,12 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
-// Protección: Solo admins
-const adminSession = Astro.cookies.get("admin_session");
-if (!adminSession) {
-  return Astro.redirect("/admin/login");
-}
-
 const modules = [
   {
     title: "Escáner",
@@ -38,6 +32,14 @@ const modules = [
   },
 ];
 ---
+
+<script>
+  // Verificar sesión admin en el cliente
+  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/login");
+  }
+</script>
+
 
 <Layout title="Panel de Control">
   <main class="dashboard-container">

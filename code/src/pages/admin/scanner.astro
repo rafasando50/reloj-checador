@@ -1,12 +1,13 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-
-// Protección: Solo admins pueden entrar al escáner
-const adminSession = Astro.cookies.get("admin_session");
-if (!adminSession) {
-  return Astro.redirect("/admin/login");
-}
 ---
+
+<script>
+  // Verificar sesión admin en el cliente
+  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/login");
+  }
+</script>
 
 <Layout title="Scanner">
   <main class="contenedor-principal">
@@ -93,7 +94,7 @@ if (!adminSession) {
         html5QrcodeScanner.pause(true);
       } catch (e) {}
 
-      fetch("/api/check", {
+      fetch("/api/check.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,13 +104,12 @@ if (!adminSession) {
       })
         .then(async (response) => {
           const data = await response.json();
-          const overlayIcon = document.getElementById("overlay-icon");
           
           if (response.ok) {
             if (overlayEl && overlayTexto) {
-              overlayEl.classList.remove("error");
-              if (overlayIcon) overlayIcon.textContent = "✓";
               const nombreDisplay = data.nombre || "Empleado";
+              overlayEl.classList.remove("error");
+              overlayEl.querySelector('.check-icon').textContent = "✓";
               overlayTexto.innerHTML = `<span style="font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px;">¡HOLA ${nombreDisplay
                 .split(" ")[0]
                 .toUpperCase()}!</span>${tipoMovimiento.toUpperCase()} REGISTRADA`;
@@ -118,8 +118,8 @@ if (!adminSession) {
           } else {
             if (overlayEl && overlayTexto) {
               overlayEl.classList.add("error");
-              if (overlayIcon) overlayIcon.textContent = "✕";
-              overlayTexto.innerHTML = `<span style="font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px;">ERROR</span>${data.error || "Error al registrar"}`;
+              overlayEl.querySelector('.check-icon').textContent = "✕";
+              overlayTexto.innerHTML = `<span style="font-size: 0.8em; opacity: 0.9; display: block; margin-bottom: 5px;">AVISO</span>${(data.error || "ERROR").toUpperCase()}`;
               overlayEl.style.display = "flex";
             }
           }

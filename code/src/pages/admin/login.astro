@@ -1,15 +1,13 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-
-// Redirigir si ya hay sesión admin
-const adminSession = Astro.cookies.get("admin_session");
-if (adminSession) {
-  return Astro.redirect("/admin/dashboard");
-}
-
-// Prevenir caché para que el botón atrás siempre valide la sesión
-Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 ---
+
+<script>
+  // Verificar sesión admin en el cliente
+  if (document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/hoy");
+  }
+</script>
 
 <Layout title="Admin Login">
   <main class="contenedor-principal">
@@ -117,7 +115,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    const res = await fetch("/api/admin/login", {
+    const res = await fetch("/api/admin/login.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

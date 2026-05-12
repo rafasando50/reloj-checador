@@ -1,22 +1,54 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-
-import pool from "../../lib/db";
-
-// Protección: Solo admins
-const adminSession = Astro.cookies.get("admin_session");
-if (!adminSession) {
-  return Astro.redirect("/admin/login");
-}
-
-let dbCompanies = [];
-try {
-  const [compRows] = await pool.execute('SELECT * FROM companies ORDER BY name ASC');
-  dbCompanies = compRows as any[];
-} catch (e) {
-  console.error(e);
-}
 ---
+
+<script>
+  // Verificar sesión admin
+  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/login");
+  }
+
+  // Cargar empresas dinámicamente
+  async function cargarEmpresas() {
+    try {
+      const res = await fetch("/api/companies.php");
+      const companies = await res.json();
+      const optionsContainer = document.getElementById("company-options");
+      if (optionsContainer) {
+        // Mantener la opción "Todas"
+        optionsContainer.innerHTML = '<div class="option selected" data-value="">Todas</div>';
+        companies.forEach(c => {
+          const div = document.createElement("div");
+          div.className = "option";
+          div.dataset.value = c.name;
+          div.textContent = c.name;
+          div.onclick = () => seleccionarEmpresa(c.name);
+          optionsContainer.appendChild(div);
+        });
+      }
+    } catch (e) {
+      console.error("Error al cargar empresas:", e);
+    }
+  }
+
+  function seleccionarEmpresa(name) {
+    const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
+    if (hiddenInput) hiddenInput.value = name;
+    const labelEl = document.getElementById('selected-company-label');
+    if (labelEl) labelEl.innerText = name || "Todas";
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    // Encontrar la opción y marcarla
+    document.querySelector(`.option[data-value="${name}"]`)?.classList.add('selected');
+    document.getElementById('company-options')?.classList.remove('active');
+    document.getElementById('company-trigger')?.classList.remove('active');
+    // @ts-ignore
+    cargarHoy();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarEmpresas();
+  });
+</script>
 
 <Layout title="Asistencia Diaria">
   <main class="contenedor-principal">
@@ -37,9 +69,7 @@ try {
               </div>
               <div class="custom-options" id="company-options">
                 <div class="option selected" data-value="">Todas</div>
-                {dbCompanies.map((c) => (
-                  <div class="option" data-value={c.name}>{c.name}</div>
-                ))}
+                {/* Las empresas se cargarán dinámicamente vía script */}
               </div>
             </div>
           </div>
@@ -129,7 +159,7 @@ try {
     const empId = (document.getElementById("empleado-id") as HTMLInputElement)?.value || "";
     const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement)?.value || "";
     
-    const res = await fetch(`/api/daily?employee_id=${empId}&company=${empresa}`);
+    const res = await fetch(`/api/daily.php?employee_id=${empId}&company=${empresa}`);
     const data = await res.json();
     
     const cuerpo = document.getElementById("tabla-cuerpo");
@@ -204,26 +234,26 @@ try {
   }
 
   /* Custom Select Styles */
-  .custom-select-wrapper { position: relative; width: 100%; }
-  .custom-select-trigger { 
+  :global(.custom-select-wrapper) { position: relative; width: 100%; }
+  :global(.custom-select-trigger) { 
     width: 100%; padding: 11px 14px; border: 2px solid #e2e8f0; border-radius: 12px;
     background: #f8fafc; cursor: pointer; display: flex; justify-content: space-between; 
     align-items: center; font-weight: 500; font-size: 0.95rem; color: #1e293b;
     box-sizing: border-box;
   }
-  .custom-select-trigger.active { border-color: #4a90e2; background: white; }
-  .custom-select-trigger.active .arrow { transform: rotate(180deg); }
-  .custom-select-trigger .arrow { transition: transform 0.3s; color: #94a3b8; }
-  .custom-options { 
+  :global(.custom-select-trigger.active) { border-color: #4a90e2; background: white; }
+  :global(.custom-select-trigger.active .arrow) { transform: rotate(180deg); }
+  :global(.custom-select-trigger .arrow) { transition: transform 0.3s; color: #94a3b8; }
+  :global(.custom-options) { 
     position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: white; 
     border: 2px solid #e2e8f0; border-radius: 12px; z-index: 100; display: none; 
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); overflow: hidden;
     width: 100%;
   }
-  .custom-options.active { display: block; }
-  .option { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; color: #475569; text-align: left; }
-  .option:hover { background: #f1f5f9; color: #4a90e2; }
-  .option.selected { background: #eff6ff; color: #4a90e2; font-weight: 700; }
+  :global(.custom-options.active) { display: block; }
+  :global(.option) { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; color: #475569; text-align: left; }
+  :global(.option:hover) { background: #f1f5f9; color: #4a90e2; }
+  :global(.option.selected) { background: #eff6ff; color: #4a90e2; font-weight: 700; }
 
   .button-group { align-items: stretch; }
   .btn-premium { height: 48px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; border: none; }
@@ -237,7 +267,15 @@ try {
   tr { transition: background 0.2s; }
   tr:hover { background: #f8fafc; }
   .nombre { font-weight: 700; color: #1e293b; }
-  .sin-registros { text-align: center; color: #94a3b8; padding: 4rem; font-style: italic; }
+  .sin-registros { 
+    text-align: center; 
+    color: #94a3b8; 
+    padding: 4rem; 
+    font-style: italic; 
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
 
   /* Badges */
   :global(.badge-status), :global(.badge-puntualidad) { font-size: 0.65rem; font-weight: 900; padding: 6px 12px; border-radius: 6px; text-transform: uppercase; display: inline-block; }

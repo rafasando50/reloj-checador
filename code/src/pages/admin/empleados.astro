@@ -1,44 +1,233 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import pool from "../../lib/db";
-
-const adminSession = Astro.cookies.get("admin_session");
-if (!adminSession) {
-  return Astro.redirect("/admin/login");
-}
-
-// Obtener parámetros de filtro
-const showInactive = Astro.url.searchParams.get("showInactive") === "true";
-const companyFilter = Astro.url.searchParams.get("company") || "all";
-
-let users = [];
-let dbCompanies = [];
-
-try {
-  // Obtener empresas para los filtros y el formulario
-  const [compRows] = await pool.execute('SELECT * FROM companies ORDER BY name ASC');
-  dbCompanies = compRows as any[];
-
-  let query = "SELECT * FROM users WHERE 1=1";
-  const params = [];
-
-  if (!showInactive) {
-    query += " AND active = 1";
-  }
-
-  if (companyFilter !== "all") {
-    query += " AND company = ?";
-    params.push(companyFilter);
-  }
-
-  query += " ORDER BY full_name ASC";
-  
-  const [rows] = (await pool.execute(query, params)) as [any[], any];
-  users = rows;
-} catch (e) {
-  console.error(e);
-}
 ---
+
+<script>
+  // Verificar sesión admin
+  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/login");
+  }
+
+  // Cargar datos dinámicamente
+  async function cargarDatos(forceReloadCompanies = false) {
+    const showInactive = (document.getElementById("check-inactive") as HTMLInputElement)?.checked;
+    const company = document.querySelector(".tab-btn.active")?.getAttribute("data-company") || "all";
+    
+    try {
+      // Cargar Empresas si es la primera vez o si se fuerza la recarga
+      const optionsContainer = document.getElementById("company-options");
+      if (forceReloadCompanies || (optionsContainer && optionsContainer.children.length <= 1)) {
+        const resComp = await fetch("/api/companies.php");
+        const companies = await resComp.json();
+        const tabsContainer = document.querySelector(".company-tabs");
+        
+        // Limpiar para evitar duplicados, pero mantener "Todos" en los tabs
+        if (optionsContainer) optionsContainer.innerHTML = '';
+        
+        // Mantener solo el botón "Todos" en los tabs
+        const btnTodos = tabsContainer?.querySelector('[data-company="all"]');
+        if (tabsContainer) {
+          tabsContainer.innerHTML = '';
+          if (btnTodos) tabsContainer.appendChild(btnTodos);
+        }
+        
+        companies.forEach(c => {
+          // Opción en el select del modal
+          const opt = document.createElement("div");
+          opt.className = "option";
+          opt.dataset.value = c.name;
+          opt.textContent = c.name;
+          opt.onclick = () => seleccionarEmpresa(c.name);
+          optionsContainer?.appendChild(opt);
+
+          // Botón en los tabs
+          const btn = document.createElement("button");
+          btn.className = "tab-btn" + (company === c.name ? " active" : "");
+          btn.dataset.company = c.name;
+          btn.textContent = c.name;
+          btn.onclick = () => {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            cargarDatos();
+          };
+          tabsContainer?.appendChild(btn);
+        });
+      }
+
+      // Cargar Usuarios
+      const resUsers = await fetch(`/api/admin/users.php?showInactive=${showInactive}&company=${company}`);
+      const users = await resUsers.json();
+      const rowsContainer = document.getElementById("employee-rows");
+      if (rowsContainer) {
+        rowsContainer.innerHTML = users.map(u => `
+          <div class="employee-row ${u.active ? "" : "row-inactive"}" 
+               style="display: grid; grid-template-columns: 2.5fr 1fr 1.5fr 1fr 1.5fr; align-items: center; padding: 1.25rem 2rem; gap: 1rem; border-bottom: 1px solid #f1f5f9;">
+            <div class="col-name" style="text-align: left;">
+              <div class="user-info" style="display: flex; align-items: center; gap: 10px;">
+                <span class="user-name" style="font-weight: 700; color: #1e293b; font-size: 1rem;">${u.full_name}</span>
+                ${!u.active ? '<span class="badge-inactive" style="background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px;">Inactivo</span>' : ''}
+              </div>
+            </div>
+            <div class="col-id" style="text-align: center;"><code class="id-code" style="background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569;">${u.employee_id}</code></div>
+            <div class="col-dept" style="text-align: left; color: #475569;">${u.department || "-"}</div>
+            <div class="col-company" style="text-align: center;">
+              <span class="tag-${(u.company || 'default').toLowerCase()}">
+                ${u.company || "-"}
+              </span>
+            </div>
+            <div class="col-actions" style="text-align: center;">
+              <div class="actions-cell" style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-action edit btn-edit-trigger" onclick='editarUsuario(${JSON.stringify(u)})'>
+                  Editar
+                </button>
+                ${u.active ? `
+                  <button class="btn-action deactivate" onclick="confirmarDesactivar(${u.id}, '${u.full_name}')">
+                    Desactivar
+                  </button>
+                ` : `
+                  <button class="btn-action reactivate" onclick="reactivarUsuario(${u.id})">
+                    Reactivar
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+        `).join("");
+      }
+    } catch (e) {
+      console.error("Error al cargar datos:", e);
+    }
+  }
+
+  function seleccionarEmpresa(name) {
+    const hiddenInput = document.getElementById('company-hidden') as HTMLInputElement;
+    if (hiddenInput) hiddenInput.value = name;
+    const labelEl = document.getElementById('selected-company-label');
+    if (labelEl) labelEl.innerText = name;
+    document.querySelectorAll('#company-options .option').forEach(o => o.classList.remove('selected'));
+    document.querySelector(`#company-options .option[data-value="${name}"]`)?.classList.add('selected');
+    document.getElementById('company-options')?.classList.remove('active');
+    document.getElementById('company-trigger')?.classList.remove('active');
+  }
+
+  // Script unificado para modales y acciones
+  const modal = document.getElementById("modal");
+  const confirmModal = document.getElementById("confirm-modal");
+  const userForm = document.getElementById("user-form") as HTMLFormElement;
+
+  // Funciones Globales
+  (window as any).cargarDatos = cargarDatos;
+  (window as any).seleccionarEmpresa = seleccionarEmpresa;
+
+  (window as any).editarUsuario = (user) => {
+    (document.getElementById("user-id") as HTMLInputElement).value = user.id;
+    (document.getElementById("field-name") as HTMLInputElement).value = user.full_name;
+    (document.getElementById("field-id") as HTMLInputElement).value = user.employee_id;
+    (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
+    seleccionarEmpresa(user.company);
+    document.getElementById("modal-title").textContent = "Editar Empleado";
+    modal?.classList.add("active");
+  };
+
+  (window as any).confirmarDesactivar = (id, name) => {
+    const nameEl = document.getElementById("confirm-user-name");
+    if (nameEl) nameEl.textContent = name;
+    (document.getElementById("execute-delete") as any).dataset.id = id;
+    confirmModal?.classList.add("active");
+  };
+
+  (window as any).reactivarUsuario = async (id) => {
+    const res = await fetch(`/api/admin/reactivate-user.php?id=${id}`, { method: "POST" });
+    if (res.ok) cargarDatos();
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarDatos();
+    
+    // Configurar eventos de modales y filtros
+    document.getElementById("check-inactive")?.addEventListener("change", cargarDatos);
+    
+    // Evento para el tab estático "Todos"
+    const btnTodos = document.querySelector('.tab-btn[data-company="all"]');
+    btnTodos?.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btnTodos.classList.add("active");
+      cargarDatos();
+    });
+    
+    document.getElementById("open-modal")?.addEventListener("click", () => {
+      userForm.reset();
+      (document.getElementById("user-id") as HTMLInputElement).value = "";
+      seleccionarEmpresa("Einsur"); // Resetear el selector al valor por defecto
+      document.getElementById("modal-title").textContent = "Nuevo Empleado";
+      modal?.classList.add("active");
+    });
+
+    document.getElementById("close-modal")?.addEventListener("click", () => modal?.classList.remove("active"));
+    document.getElementById("cancel-confirm")?.addEventListener("click", () => confirmModal?.classList.remove("active"));
+
+    // --- Lógica del Custom Select (Empresas) ---
+    const trigger = document.getElementById('company-trigger');
+    const optionsMenu = document.getElementById('company-options');
+
+    trigger?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      optionsMenu?.classList.toggle('active');
+      trigger?.classList.toggle('active');
+    });
+
+    // Cerrar al hacer clic fuera
+    window.addEventListener('click', () => {
+      optionsMenu?.classList.remove('active');
+      trigger?.classList.remove('active');
+    });
+    
+    // Formulario Usuario
+    userForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(userForm));
+      const res = await fetch("/api/admin/create-user.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        modal?.classList.remove("active");
+        cargarDatos();
+      }
+    });
+
+    // Ejecutar Desactivación
+    document.getElementById("execute-delete")?.addEventListener("click", async () => {
+      const btn = document.getElementById("execute-delete") as HTMLElement;
+      const id = btn.dataset.id;
+      if (!id) return;
+      
+      const res = await fetch(`/api/admin/deactivate-user.php?id=${id}`, { method: "POST" });
+      if (res.ok) {
+        confirmModal?.classList.remove("active");
+        cargarDatos();
+      }
+    });
+
+    // Lógica de Empresas
+    const companyModal = document.getElementById("company-modal");
+    document.getElementById("open-company-modal")?.addEventListener("click", () => companyModal?.classList.add("active"));
+    document.getElementById("close-company-modal")?.addEventListener("click", () => companyModal?.classList.remove("active"));
+    
+    document.getElementById("save-company")?.addEventListener("click", async () => {
+      const nameInput = document.getElementById("new-company-name") as HTMLInputElement;
+      const name = nameInput.value;
+      if (!name) return;
+      const res = await fetch(`/api/admin/companies.php?name=${encodeURIComponent(name)}`, { method: "POST" });
+      if (res.ok) {
+        nameInput.value = "";
+        companyModal?.classList.remove("active");
+        cargarDatos();
+      }
+    });
+  });
+</script>
 
 <Layout title="Gestión de Personal">
   <main class="content">
@@ -50,14 +239,12 @@ try {
       <div class="filters-bar">
         <div class="left-filters">
           <div class="company-tabs">
-            <button class={`tab-btn ${companyFilter === 'all' ? 'active' : ''}`} data-company="all">Todos</button>
-            {dbCompanies.map((c) => (
-              <button class={`tab-btn ${companyFilter === c.name ? 'active' : ''}`} data-company={c.name}>{c.name}</button>
-            ))}
+            <button class="tab-btn active" data-company="all">Todos</button>
+            {/* Las empresas se cargarán dinámicamente */}
           </div>
 
           <label class="toggle-inactive">
-            <input type="checkbox" id="check-inactive" checked={showInactive} />
+            <input type="checkbox" id="check-inactive" onchange="cargarDatos()" />
             <div class="switch"></div>
             <span>Mostrar inactivos</span>
           </label>
@@ -81,56 +268,17 @@ try {
         </div>
       </div>
 
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>ID</th>
-              <th>Depto</th>
-              <th>Empresa</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {
-              users.map((u) => (
-                <tr class={u.active ? "" : "row-inactive"}>
-                  <td>
-                    <div class="user-info">
-                      <span class="user-name">{u.full_name}</span>
-                      {!u.active && <span class="badge-inactive">Inactivo</span>}
-                    </div>
-                  </td>
-                  <td><code class="id-code">{u.employee_id}</code></td>
-                  <td>{u.department}</td>
-                  <td>
-                    <span class={u.company === "Innova" ? "tag-innova" : "tag-einsur"}>
-                      {u.company}
-                    </span>
-                  </td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="btn-action edit btn-edit-trigger" data-user={JSON.stringify(u)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                        Editar
-                      </button>
-                      {u.active ? (
-                        <button class="btn-action deactivate btn-delete-trigger" data-id={u.id} data-name={u.full_name}>
-                          Desactivar
-                        </button>
-                      ) : (
-                        <button class="btn-action reactivate btn-reactivate" data-id={u.id}>
-                          Reactivar
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
+      <div class="employee-list-container">
+        <div class="employee-header">
+          <div class="col-name">Nombre</div>
+          <div class="col-id">ID</div>
+          <div class="col-dept">Depto</div>
+          <div class="col-company">Empresa</div>
+          <div class="col-actions">Acciones</div>
+        </div>
+        <div id="employee-rows" class="employee-rows">
+          {/* Los empleados se cargarán dinámicamente */}
+        </div>
       </div>
     </div>
   </main>
@@ -166,9 +314,8 @@ try {
                 <svg class="arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </div>
               <div class="custom-options" id="company-options">
-                {dbCompanies.map((c, index) => (
-                  <div class={`option ${index === 0 ? 'selected' : ''}`} data-value={c.name}>{c.name}</div>
-                ))}
+                <div class="option selected" data-value="Einsur">Einsur</div>
+                {/* Cargado dinámicamente */}
               </div>
             </div>
           </div>
@@ -208,88 +355,61 @@ try {
 </Layout>
 
 <script>
+  // Script unificado para modales y acciones
   const modal = document.getElementById("modal");
   const confirmModal = document.getElementById("confirm-modal");
   const userForm = document.getElementById("user-form") as HTMLFormElement;
-  
-  // Lógica de Filtros
-  function updateFilters() {
-    const showInactive = (document.getElementById("check-inactive") as HTMLInputElement).checked;
-    const activeTab = document.querySelector(".tab-btn.active") as HTMLElement;
-    const company = activeTab?.dataset.company || "all";
-    window.location.href = `/admin/empleados?showInactive=${showInactive}&company=${company}`;
-  }
 
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      updateFilters();
-    });
-  });
-
-  document.getElementById("check-inactive")?.addEventListener("change", updateFilters);
-
-  // El resto de la lógica de modales y API se mantiene igual...
-  document.getElementById("open-modal")?.addEventListener("click", () => {
-    userForm.reset();
-    (document.getElementById("user-id") as HTMLInputElement).value = "";
+  // Funciones Globales (para los onclick de la tabla)
+  (window as any).editarUsuario = (user) => {
+    (document.getElementById("user-id") as HTMLInputElement).value = user.id;
+    (document.getElementById("field-name") as HTMLInputElement).value = user.full_name;
+    (document.getElementById("field-id") as HTMLInputElement).value = user.employee_id;
+    (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
+    (window as any).seleccionarEmpresa(user.company);
+    document.getElementById("modal-title").textContent = "Editar Empleado";
     modal?.classList.add("active");
-  });
+  };
 
-  document.querySelectorAll(".btn-edit-trigger").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const user = JSON.parse((btn as HTMLElement).dataset.user || '{}');
-      (document.getElementById("user-id") as HTMLInputElement).value = user.id;
-      (document.getElementById("field-name") as HTMLInputElement).value = user.full_name;
-      (document.getElementById("field-id") as HTMLInputElement).value = user.employee_id;
-      (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
-      modal?.classList.add("active");
-    });
-  });
+  (window as any).confirmarDesactivar = (id, name) => {
+    const nameEl = document.getElementById("confirm-user-name");
+    if (nameEl) nameEl.textContent = name;
+    (document.getElementById("execute-delete") as any).dataset.id = id;
+    confirmModal?.classList.add("active");
+  };
 
-  document.getElementById("close-modal")?.addEventListener("click", () => modal?.classList.remove("active"));
+  (window as any).reactivarUsuario = async (id) => {
+    const res = await fetch(`/api/admin/reactivate-user.php?id=${id}`, { method: "POST" });
+    if (res.ok) (window as any).cargarDatos();
+  };
 
+  // Formulario Usuario
   userForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(userForm));
-    const res = await fetch("/api/admin/create-user", {
+    const res = await fetch("/api/admin/create-user.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) window.location.reload();
+    if (res.ok) {
+      modal?.classList.remove("active");
+      (window as any).cargarDatos();
+    }
   });
 
-  // Re-activación y Desactivación simplificadas para brevedad del ejemplo, se mantienen igual en el archivo real
-  document.querySelectorAll(".btn-delete-trigger").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = (btn as HTMLElement).dataset.id;
-      const name = (btn as HTMLElement).dataset.name;
-      const nameEl = document.getElementById("confirm-user-name");
-      if (nameEl) nameEl.innerText = name || "";
-      (document.getElementById("execute-delete") as any).dataset.id = id;
-      confirmModal?.classList.add("active");
-    });
-  });
-
+  // Ejecutar Desactivación
   document.getElementById("execute-delete")?.addEventListener("click", async () => {
     const btn = document.getElementById("execute-delete") as HTMLElement;
     const id = btn.dataset.id;
     if (!id) return;
-    const res = await fetch(`/api/admin/deactivate-user?id=${id}`, { method: "POST" });
-    if (res.ok) window.location.reload();
+    
+    const res = await fetch(`/api/admin/deactivate-user.php?id=${id}`, { method: "POST" });
+    if (res.ok) {
+      confirmModal?.classList.remove("active");
+      (window as any).cargarDatos();
+    }
   });
-
-  document.querySelectorAll(".btn-reactivate").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = (btn as HTMLElement).dataset.id;
-      const res = await fetch(`/api/admin/reactivate-user?id=${id}`, { method: "POST" });
-      if (res.ok) window.location.reload();
-    });
-  });
-
-  document.getElementById("cancel-confirm")?.addEventListener("click", () => confirmModal?.classList.remove("active"));
 
   // Lógica de Empresas
   const companyModal = document.getElementById("company-modal");
@@ -297,43 +417,14 @@ try {
   document.getElementById("close-company-modal")?.addEventListener("click", () => companyModal?.classList.remove("active"));
   
   document.getElementById("save-company")?.addEventListener("click", async () => {
-    const name = (document.getElementById("new-company-name") as HTMLInputElement).value;
+    const nameInput = document.getElementById("new-company-name") as HTMLInputElement;
+    const name = nameInput.value;
     if (!name) return;
-    const res = await fetch(`/api/admin/companies?name=${name}`, { method: "POST" });
-    if (res.ok) window.location.reload();
-  });
-
-  // Lógica para el Custom Dropdown (RESTORED)
-  const trigger = document.getElementById('company-trigger');
-  const options = document.getElementById('company-options');
-  const hiddenInput = document.getElementById('company-hidden') as HTMLInputElement;
-
-  trigger?.addEventListener('click', () => {
-    options?.classList.toggle('active');
-    trigger?.classList.toggle('active');
-  });
-
-  document.querySelectorAll('.option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      const val = (opt as HTMLElement).dataset.value || 'Einsur';
-      const label = (opt as HTMLElement).innerText;
-      
-      if (hiddenInput) hiddenInput.value = val;
-      const labelEl = document.getElementById('selected-company-label');
-      if (labelEl) labelEl.innerText = label;
-      
-      document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
-      opt.classList.add('selected');
-      
-      options?.classList.remove('active');
-      trigger?.classList.remove('active');
-    });
-  });
-
-  window.addEventListener('click', (e) => {
-    if (!trigger?.contains(e.target as Node) && !options?.contains(e.target as Node)) {
-      options?.classList.remove('active');
-      trigger?.classList.remove('active');
+    const res = await fetch(`/api/admin/companies.php?name=${encodeURIComponent(name)}`, { method: "POST" });
+    if (res.ok) {
+      nameInput.value = "";
+      companyModal?.classList.remove("active");
+      (window as any).cargarDatos(true);
     }
   });
 </script>
@@ -388,7 +479,69 @@ try {
     gap: 2rem;
   }
 
+  /* Estilos para elementos dinámicos inyectados por JS */
+  :global(.tab-btn) {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  :global(.tab-btn.active) {
+    background: white;
+    color: #4a90e2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  :global(.btn-action) {
+    background: none;
+    border: 1px solid;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  
+  :global(.btn-action.edit) { border-color: #dbeafe; color: #3b82f6; }
+  :global(.btn-action.edit:hover) { background: #eff6ff; }
+  
+  :global(.btn-action.deactivate) { border-color: #fee2e2; color: #ef4444; }
+  :global(.btn-action.deactivate:hover) { background: #fef2f2; }
+
+  :global(.btn-action.reactivate) { border-color: #dcfce7; color: #22c55e; }
+  :global(.btn-action.reactivate:hover) { background: #f0fdf4; }
+
+  :global(.id-code) { 
+    background: #f1f5f9; 
+    padding: 4px 8px; 
+    border-radius: 6px; 
+    font-family: monospace; 
+    color: #475569; 
+  }
+
+  :global(.user-name) { font-weight: 700; color: #1e293b; }
+  
+  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg) { 
+    padding: 4px 10px; 
+    border-radius: 99px; 
+    font-weight: 700; 
+    font-size: 0.75rem; 
+  }
+  :global(.tag-innova) { color: #4A90E2; background: #eff6ff; }
+  :global(.tag-einsur) { color: #273469; background: #f1f5f9; }
+  :global(.tag-scg) { color: #64748b; background: #f8fafc; }
+
   .company-tabs {
+
     display: flex;
     background: #e2e8f0;
     padding: 4px;
@@ -421,104 +574,127 @@ try {
   .toggle-inactive input:checked + .switch { background: #4a90e2; }
   .toggle-inactive input:checked + .switch::after { left: 21px; }
 
-  .table-container { width: 100%; border: 1px solid #e2e8f0; border-radius: 20px; background: white; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; table-layout: auto; }
-  th { background: #f8fafc; padding: 1.25rem; text-align: center; font-size: 0.75rem; font-weight: 800; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-  td { padding: 1.25rem; border-bottom: 1px solid #f1f5f9; text-align: center; }
+  /* --- DASHBOARD LAYOUT --- */
+  .content { padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .management-card { 
+    background: white; 
+    border-radius: 30px; 
+    padding: 2.5rem !important; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.8);
+  }
 
-  .user-name { font-weight: 700; color: #1e293b; }
-  .id-code { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-family: monospace; color: #475569; }
-  .badge-inactive { background: #fee2e2; color: #ef4444; font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
-
-  .tag-innova, .tag-einsur { color: #4A90E2; background: #eff6ff; padding: 4px 10px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; }
-
-  .actions-cell { display: flex; gap: 8px; justify-content: center; }
-  .btn-action { background: none; border: 1px solid; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
-  .btn-action.edit { border-color: #dbeafe; color: #3b82f6; }
-  .btn-action.deactivate { border-color: #fee2e2; color: #ef4444; }
-
-  /* Modales */
-  .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); align-items: center; justify-content: center; z-index: 2000; }
-  .modal.active { display: flex; }
-  .modal-content { background: white; width: 100%; max-width: 580px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
-  .input-container { position: relative; }
-  .input-container.full-width { grid-column: span 2; }
-  .input-container input { width: 100%; padding: 12px 12px 12px 40px; border: 2px solid #e2e8f0; font-size: 1rem; box-sizing: border-box; }
-  .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
-  .form-actions {
+  .filters-bar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    padding: 1.25rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
     gap: 1.5rem;
-    justify-content: center;
+  }
+  .left-filters { display: flex; align-items: center; gap: 2rem; }
+  
+  .company-tabs { 
+    display: flex; 
+    background: #e2e8f0; 
+    padding: 5px; 
+    border-radius: 14px; 
+    gap: 2px;
+  }
+  .tab-btn {
+    padding: 10px 24px;
+    border: none;
+    background: none;
+    border-radius: 10px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+  }
+  .tab-btn.active { background: white; color: #4a90e2; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+  /* --- NUEVA ESTRUCTURA GRID (SOLUCIÓN MATEMÁTICA) --- */
+  .employee-list-container {
+    width: 100%;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    overflow-x: auto; /* Permite deslizar hacia los lados */
     margin-top: 1rem;
   }
-  .form-actions .btn-premium {
-    flex: 1;
-    max-width: 240px;
-  }
-  
-  .btn-premium {
-    padding: 12px 24px;
-    border: none;
-    cursor: pointer;
-    font-weight: 800;
-    font-size: 15px; /* Ajustado a 15px */
-    border-radius: 12px;
-    display: flex;
+
+  .employee-header, .employee-row {
+    display: grid !important;
+    grid-template-columns: 2.5fr 1fr 1.5fr 1fr 1.5fr !important;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    padding: 1.25rem 2rem;
+    gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .employee-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .employee-row {
+    border-bottom: 1px solid #f1f5f9;
     transition: all 0.2s;
   }
-  .btn-premium.primary { background: #4a90e2; color: white; }
-  .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
+  .employee-row:hover { background: #f8fafc; transform: translateX(5px); }
+  .employee-row.row-inactive { opacity: 0.6; background: #fcfcfc; }
 
-  .custom-select-wrapper { position: relative; width: 100%; }
-  .custom-select-trigger { padding: 12px 16px; border: 2px solid #e2e8f0; background: #f8fafc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
-  .custom-select-trigger.active .arrow { transform: rotate(180deg); }
-  .custom-select-trigger .arrow { transition: transform 0.3s; color: #94a3b8; }
+  .col-name { text-align: left; }
+  .col-id, .col-company, .col-actions { text-align: center; }
+  .col-dept { text-align: left; }
+
+  .user-name { font-weight: 700; color: #1e293b; font-size: 1rem; }
+  .id-code { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569; }
+  .badge-inactive { background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px; }
   
-  .custom-options { 
-    position: absolute; top: 100%; left: 0; right: 0; background: white; 
-    border: 2px solid #e2e8f0; border-top: none; z-index: 100; display: none; 
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  }
-  .custom-options.active { display: block; }
-  .option { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: #475569; }
-  .option:hover { background: #f1f5f9; color: #4a90e2; }
-  .option.selected { background: #eff6ff; color: #4a90e2; font-weight: 700; }
+  .tag-innova, .tag-einsur { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
+  .tag-innova { color: #4A90E2; background: #eff6ff; }
+  .tag-einsur { color: #273469; background: #f1f5f9; }
 
-  /* RESPONSIVE DESIGN */
+  .actions-cell { display: flex; gap: 10px; justify-content: center; }
+  .btn-action { 
+    background: white; border: 1px solid; padding: 7px 14px; border-radius: 10px; 
+    font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+  }
+  .btn-action.edit { border-color: #e2e8f0; color: #3b82f6; }
+  .btn-action.edit:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+  .btn-action.deactivate { border-color: #fee2e2; color: #ef4444; }
+  .btn-action.deactivate:hover { background: #ef4444; color: white; border-color: #ef4444; }
+  .btn-action.reactivate { border-color: #dcfce7; color: #22c55e; }
+  .btn-action.reactivate:hover { background: #22c55e; color: white; border-color: #22c55e; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .employee-header, .employee-row { grid-template-columns: 2fr 1fr 1fr 1.5fr !important; }
+    .col-id { display: none; }
+  }
+
   @media (max-width: 768px) {
-    .gradient-text { font-size: 2.5rem; margin-bottom: 2rem; }
-    .filters-bar { flex-direction: column; gap: 1.5rem; padding: 1.5rem; }
-    .left-filters { flex-direction: column; width: 100%; gap: 1.5rem; }
-    .company-tabs { width: 100%; justify-content: center; }
-    .tab-btn { flex: 1; text-align: center; }
-    #open-modal { width: 100%; }
-    .content { padding: 1.5rem 1rem; }
-    .management-card { padding: 1.5rem !important; }
-  }
-
-  @media (max-width: 425px) {
-    .content { padding: 1rem 0.5rem; }
-    .management-card { 
-      padding: 1.5rem !important; 
-      border-radius: 16px;
-      margin-top: -1.5rem; /* Subir la tarjeta */
+    .filters-bar { flex-direction: column; padding: 1.5rem; }
+    .left-filters { flex-direction: column; width: 100%; gap: 1rem; }
+    .company-tabs { width: 100%; overflow-x: auto; }
+    .tab-btn { flex: 1; padding: 10px; }
+    .employee-header, .employee-row { 
+      grid-template-columns: 1fr 100px 120px !important; 
+      padding: 1.25rem 1rem;
     }
-    .gradient-text { font-size: 2rem; margin-bottom: 1.5rem; }
-    th:nth-child(2), td:nth-child(2), /* ID */
-    th:nth-child(3), td:nth-child(3) /* Depto */ {
-      display: none;
-    }
-    table { min-width: 100%; }
-    th, td { padding: 1rem 0.5rem; font-size: 0.8rem; }
-    .btn-action { padding: 6px 8px; font-size: 0.75rem; }
-    .modal-content { padding: 2rem !important; margin: 10px; }
-    .modal-content h1 { font-size: 28px !important; margin-bottom: 2rem !important; }
-    .form-grid { grid-template-columns: 1fr; }
-    .input-container.full-width { grid-column: span 1; }
+    .col-dept { display: none; }
+    .actions-cell { flex-direction: column; gap: 5px; }
+    .btn-action { width: 100%; padding: 5px; font-size: 0.75rem; }
   }
 
   @media (max-width: 375px) {
@@ -545,4 +721,83 @@ try {
     .actions-cell { flex-direction: column; width: 100%; }
     .tag-innova, .tag-einsur { padding: 2px 6px; font-size: 0.65rem; }
   }
+  /* --- MODALES (RESTAURADOS) --- */
+  .modal { 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(15, 23, 42, 0.7); 
+    backdrop-filter: blur(10px); 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 2000; 
+  }
+  .modal.active { display: flex; }
+  .modal-content { 
+    background: white; 
+    width: 100%; 
+    max-width: 580px; 
+    border-radius: 24px;
+    overflow: hidden;
+    padding: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+  .input-container { position: relative; }
+  .input-container.full-width { grid-column: span 2; }
+  .input-container input { 
+    width: 100%; 
+    padding: 12px 12px 12px 40px; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 12px;
+    font-size: 1rem; 
+    box-sizing: border-box; 
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .input-container input:focus { border-color: #4a90e2; outline: none; background: white; }
+  .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+
+  .form-actions { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1rem; }
+  .btn-premium {
+    padding: 14px 28px;
+    border: none;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 15px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .btn-premium.primary { background: #4a90e2; color: white; box-shadow: 0 4px 14px rgba(74, 144, 226, 0.4); }
+  .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
+  .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); }
+
+  /* Custom Select en Modales */
+  :global(.custom-select-wrapper) { position: relative; width: 100%; }
+  :global(.custom-select-trigger) { 
+    padding: 12px 16px; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 12px;
+    background: #f8fafc; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-weight: 500; 
+  }
+  :global(.custom-select-trigger.active) { border-color: #4a90e2; background: white; }
+  :global(.custom-options) { 
+    position: absolute; top: 100%; left: 0; right: 0; background: white; 
+    border: 2px solid #e2e8f0; border-radius: 12px; margin-top: 4px; z-index: 100; display: none; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  :global(.custom-options.active) { display: block; }
+  :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; }
+  :global(.option:hover) { background: #f1f5f9; color: #4a90e2; }
 </style>

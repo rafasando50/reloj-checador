@@ -1,12 +1,12 @@
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
 
-// https://astro.build/config
+// Eliminamos el import de Node ya que BanaHosting no lo usará así
 export default defineConfig({
-  output: 'server',
-  adapter: node({
-    mode: 'standalone'
-  }),
+  output: 'static', // Cambiamos de 'server' a 'static'
+  build: {
+    format: 'file'
+  },
+  // El adapter se quita o se comenta porque ya no procesarás en el servidor
   security: {
     checkOrigin: false
   },

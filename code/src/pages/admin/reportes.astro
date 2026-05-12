@@ -1,22 +1,54 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-
-import pool from "../../lib/db";
-
-// Protección: Solo admins
-const adminSession = Astro.cookies.get("admin_session");
-if (!adminSession) {
-  return Astro.redirect("/admin/login");
-}
-
-let dbCompanies = [];
-try {
-  const [compRows] = await pool.execute('SELECT * FROM companies ORDER BY name ASC');
-  dbCompanies = compRows as any[];
-} catch (e) {
-  console.error(e);
-}
 ---
+
+<script is:inline src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<script>
+  // Verificar sesión admin
+  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/login");
+  }
+
+  // Cargar empresas dinámicamente
+  async function cargarEmpresas() {
+    try {
+      const res = await fetch("/api/companies.php");
+      const companies = await res.json();
+      const optionsContainer = document.getElementById("company-options");
+      if (optionsContainer) {
+        optionsContainer.innerHTML = '<div class="option selected" data-value="">Todas</div>';
+        companies.forEach(c => {
+          const div = document.createElement("div");
+          div.className = "option";
+          div.dataset.value = c.name;
+          div.textContent = c.name;
+          div.onclick = () => seleccionarEmpresa(c.name);
+          optionsContainer.appendChild(div);
+        });
+      }
+    } catch (e) {
+      console.error("Error al cargar empresas:", e);
+    }
+  }
+
+  function seleccionarEmpresa(name) {
+    const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
+    if (hiddenInput) hiddenInput.value = name;
+    const labelEl = document.getElementById('selected-company-label');
+    if (labelEl) labelEl.innerText = name || "Todas";
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    document.querySelector(`.option[data-value="${name}"]`)?.classList.add('selected');
+    document.getElementById('company-options')?.classList.remove('active');
+    document.getElementById('company-trigger')?.classList.remove('active');
+    // @ts-ignore
+    document.getElementById("btn-buscar")?.click();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarEmpresas();
+  });
+</script>
 
 <Layout title="Reportes Globales">
   <main class="contenedor-principal">
@@ -45,9 +77,7 @@ try {
               </div>
               <div class="custom-options" id="company-options">
                 <div class="option selected" data-value="">Todas</div>
-                {dbCompanies.map((c) => (
-                  <div class="option" data-value={c.name}>{c.name}</div>
-                ))}
+                {/* Cargado dinámicamente */}
               </div>
             </div>
           </div>
@@ -201,7 +231,7 @@ try {
     const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement).value;
 
     const res = await fetch(
-      `/api/reports?start=${inicio}&end=${fin}&employee_id=${empId}&company=${empresa}`,
+      `/api/reports.php?start=${inicio}&end=${fin}&employee_id=${empId}&company=${empresa}`,
     );
     const data = (await res.json()) as any[];
 
@@ -236,12 +266,44 @@ try {
     }
   });
 
-  document.getElementById("btn-exportar")?.addEventListener("click", () => {
+  document.getElementById("btn-exportar")?.addEventListener("click", async () => {
     const inicio = (document.getElementById("fecha-inicio") as HTMLInputElement).value;
     const fin = (document.getElementById("fecha-fin") as HTMLInputElement).value;
     const empId = (document.getElementById("empleado-id") as HTMLInputElement).value;
     const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement).value;
-    window.location.href = `/api/reports/export?start=${inicio}&end=${fin}&employee_id=${empId}&company=${empresa}`;
+
+    // Obtener datos actuales para exportar
+    const res = await fetch(
+      `/api/reports.php?start=${inicio}&end=${fin}&employee_id=${empId}&company=${empresa}`,
+    );
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      alert("No hay datos para exportar");
+      return;
+    }
+
+    // Formatear datos para Excel
+    const excelData = data.map(r => ({
+      'Empleado': r.full_name,
+      'ID': r.employee_id,
+      'Empresa': r.company,
+      'Entrada': r.entrada ? new Date(r.entrada).toLocaleString() : "-",
+      'Salida': r.salida ? new Date(r.salida).toLocaleString() : "En Turno",
+      'Puntualidad': r.puntualidad
+    }));
+
+    // Crear libro y hoja
+    // @ts-ignore
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    // @ts-ignore
+    const wb = XLSX.utils.book_new();
+    // @ts-ignore
+    XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+
+    // Descargar
+    // @ts-ignore
+    XLSX.writeFile(wb, `Reporte_Asistencia_${inicio}_al_${fin}.xlsx`);
   });
 </script>
 
@@ -323,8 +385,8 @@ try {
   }
 
   /* Custom Select Styles */
-  .custom-select-wrapper { position: relative; width: 100%; }
-  .custom-select-trigger { 
+  :global(.custom-select-wrapper) { position: relative; width: 100%; }
+  :global(.custom-select-trigger) { 
     width: 100%;
     padding: 12px 16px; 
     border: 2px solid #e2e8f0; 
@@ -339,20 +401,20 @@ try {
     color: #1e293b;
     box-sizing: border-box;
   }
-  .custom-select-trigger.active { border-color: #4a90e2; background: white; }
-  .custom-select-trigger.active .arrow { transform: rotate(180deg); }
-  .custom-select-trigger .arrow { transition: transform 0.3s; color: #94a3b8; }
+  :global(.custom-select-trigger.active) { border-color: #4a90e2; background: white; }
+  :global(.custom-select-trigger.active .arrow) { transform: rotate(180deg); }
+  :global(.custom-select-trigger .arrow) { transition: transform 0.3s; color: #94a3b8; }
   
-  .custom-options { 
+  :global(.custom-options) { 
     position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: white; 
     border: 2px solid #e2e8f0; border-radius: 12px; z-index: 100; display: none; 
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
   }
-  .custom-options.active { display: block; }
-  .option { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: #475569; text-align: left; }
-  .option:hover { background: #f1f5f9; color: #4a90e2; }
-  .option.selected { background: #eff6ff; color: #4a90e2; font-weight: 700; }
+  :global(.custom-options.active) { display: block; }
+  :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: #475569; text-align: left; }
+  :global(.option:hover) { background: #f1f5f9; color: #4a90e2; }
+  :global(.option.selected) { background: #eff6ff; color: #4a90e2; font-weight: 700; }
 
   .botones-filtros {
     display: flex;
