@@ -64,7 +64,10 @@ import Layout from "../../layouts/Layout.astro";
                style="display: grid; grid-template-columns: 2.5fr 1fr 1.5fr 1fr 1.5fr; align-items: center; padding: 1.25rem 2rem; gap: 1rem; border-bottom: 1px solid #f1f5f9;">
             <div class="col-name" style="text-align: left;">
               <div class="user-info" style="display: flex; align-items: center; gap: 10px;">
-                <span class="user-name" style="font-weight: 700; color: #1e293b; font-size: 1rem;">${u.full_name}</span>
+                <div style="display: flex; flex-direction: column;">
+                  <span class="user-name" style="font-weight: 700; color: #1e293b; font-size: 1rem;">${u.full_name}</span>
+                  <span class="user-puesto" style="font-size: 0.75rem; color: #64748b; font-weight: 500;">${u.puesto || "Empleado"}</span>
+                </div>
                 ${!u.active ? '<span class="badge-inactive" style="background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px;">Inactivo</span>' : ''}
               </div>
             </div>
@@ -124,6 +127,12 @@ import Layout from "../../layouts/Layout.astro";
     (document.getElementById("field-name") as HTMLInputElement).value = user.full_name;
     (document.getElementById("field-id") as HTMLInputElement).value = user.employee_id;
     (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
+    (document.getElementById("field-puesto") as HTMLInputElement).value = user.puesto || "";
+    (document.getElementById("field-horario") as HTMLSelectElement).value = user.tipo_horario || "Tiempo Completo";
+    
+    const errCont = document.getElementById("modal-error-container");
+    if (errCont) errCont.style.display = "none";
+
     seleccionarEmpresa(user.company);
     document.getElementById("modal-title").textContent = "Editar Empleado";
     modal?.classList.add("active");
@@ -158,12 +167,16 @@ import Layout from "../../layouts/Layout.astro";
     document.getElementById("open-modal")?.addEventListener("click", () => {
       userForm.reset();
       (document.getElementById("user-id") as HTMLInputElement).value = "";
+      const errCont = document.getElementById("modal-error-container");
+      if (errCont) errCont.style.display = "none";
       seleccionarEmpresa("Einsur"); // Resetear el selector al valor por defecto
       document.getElementById("modal-title").textContent = "Nuevo Empleado";
       modal?.classList.add("active");
     });
 
-    document.getElementById("close-modal")?.addEventListener("click", () => modal?.classList.remove("active"));
+    document.getElementById("close-modal")?.addEventListener("click", () => {
+      modal?.classList.remove("active");
+    });
     document.getElementById("cancel-confirm")?.addEventListener("click", () => confirmModal?.classList.remove("active"));
 
     // --- Lógica del Custom Select (Empresas) ---
@@ -185,15 +198,33 @@ import Layout from "../../layouts/Layout.astro";
     // Formulario Usuario
     userForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const errCont = document.getElementById("modal-error-container");
+      const errText = document.getElementById("modal-error-text");
+      if (errCont) errCont.style.display = "none";
+
       const data = Object.fromEntries(new FormData(userForm));
       const res = await fetch("/api/admin/create-user.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+
       if (res.ok) {
         modal?.classList.remove("active");
         cargarDatos();
+      } else {
+        const errorData = await res.json();
+        if (errCont && errText) {
+          errText.textContent = errorData.error || "No se pudo guardar el empleado";
+          errCont.style.display = "flex";
+          // Efecto de sacudida
+          errCont.animate([
+            { transform: 'translateX(0)' },
+            { transform: 'translateX(-5px)' },
+            { transform: 'translateX(5px)' },
+            { transform: 'translateX(0)' }
+          ], { duration: 300 });
+        }
       }
     });
 
@@ -286,7 +317,14 @@ import Layout from "../../layouts/Layout.astro";
   {/* Los Modales se mantienen igual */}
   <div id="modal" class="modal">
     <div class="modal-content card-premium" style="border-radius: 0; padding: 4rem !important;">
-      <h1 id="modal-title" style="font-size: 40px; font-weight: 800; text-align: center; margin-bottom: 3.5rem;">Nuevo Empleado</h1>
+      <h1 id="modal-title" style="font-size: 40px; font-weight: 800; text-align: center; margin-bottom: 2rem;">Nuevo Empleado</h1>
+      
+      {/* Contenedor de Error Integrado */}
+      <div id="modal-error-container" style="display: none; background: #fef2f2; color: #dc2626; padding: 1rem; border-radius: 12px; border: 1px solid #fee2e2; margin-bottom: 2rem; font-weight: 700; font-size: 0.9rem; align-items: center; gap: 10px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="modal-error-text"></span>
+      </div>
+
       <form id="user-form" class="modal-form">
         <input type="hidden" name="id" id="user-id" />
         <div class="form-grid">
@@ -302,9 +340,21 @@ import Layout from "../../layouts/Layout.astro";
             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <input type="password" name="password" id="field-pass" placeholder="Contraseña" />
           </div>
+          <div class="input-container">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+            <input type="text" name="puesto" id="field-puesto" placeholder="Puesto / Cargo" />
+          </div>
           <div class="input-container full-width">
             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M9 21v-2a4 4 0 0 1 3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
             <input type="text" name="department" id="field-dept" placeholder="Departamento" />
+          </div>
+          <div class="input-container full-width">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 5px; margin-left: 5px;">TURNO / HORARIO</label>
+            <select name="tipo_horario" id="field-horario" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; background: #f8fafc; font-weight: 600; color: #1e293b; appearance: none; cursor: pointer;">
+              <option value="Tiempo Completo">Tiempo Completo (8:00 AM)</option>
+              <option value="Practicante Matutino">Practicante Matutino (8:00 AM)</option>
+              <option value="Practicante Vespertino">Practicante Vespertino (1:00 PM)</option>
+            </select>
           </div>
           <div class="input-container full-width">
             <div class="custom-select-wrapper">
@@ -354,80 +404,8 @@ import Layout from "../../layouts/Layout.astro";
   </div>
 </Layout>
 
-<script>
-  // Script unificado para modales y acciones
-  const modal = document.getElementById("modal");
-  const confirmModal = document.getElementById("confirm-modal");
-  const userForm = document.getElementById("user-form") as HTMLFormElement;
 
-  // Funciones Globales (para los onclick de la tabla)
-  (window as any).editarUsuario = (user) => {
-    (document.getElementById("user-id") as HTMLInputElement).value = user.id;
-    (document.getElementById("field-name") as HTMLInputElement).value = user.full_name;
-    (document.getElementById("field-id") as HTMLInputElement).value = user.employee_id;
-    (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
-    (window as any).seleccionarEmpresa(user.company);
-    document.getElementById("modal-title").textContent = "Editar Empleado";
-    modal?.classList.add("active");
-  };
 
-  (window as any).confirmarDesactivar = (id, name) => {
-    const nameEl = document.getElementById("confirm-user-name");
-    if (nameEl) nameEl.textContent = name;
-    (document.getElementById("execute-delete") as any).dataset.id = id;
-    confirmModal?.classList.add("active");
-  };
-
-  (window as any).reactivarUsuario = async (id) => {
-    const res = await fetch(`/api/admin/reactivate-user.php?id=${id}`, { method: "POST" });
-    if (res.ok) (window as any).cargarDatos();
-  };
-
-  // Formulario Usuario
-  userForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(userForm));
-    const res = await fetch("/api/admin/create-user.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
-      modal?.classList.remove("active");
-      (window as any).cargarDatos();
-    }
-  });
-
-  // Ejecutar Desactivación
-  document.getElementById("execute-delete")?.addEventListener("click", async () => {
-    const btn = document.getElementById("execute-delete") as HTMLElement;
-    const id = btn.dataset.id;
-    if (!id) return;
-    
-    const res = await fetch(`/api/admin/deactivate-user.php?id=${id}`, { method: "POST" });
-    if (res.ok) {
-      confirmModal?.classList.remove("active");
-      (window as any).cargarDatos();
-    }
-  });
-
-  // Lógica de Empresas
-  const companyModal = document.getElementById("company-modal");
-  document.getElementById("open-company-modal")?.addEventListener("click", () => companyModal?.classList.add("active"));
-  document.getElementById("close-company-modal")?.addEventListener("click", () => companyModal?.classList.remove("active"));
-  
-  document.getElementById("save-company")?.addEventListener("click", async () => {
-    const nameInput = document.getElementById("new-company-name") as HTMLInputElement;
-    const name = nameInput.value;
-    if (!name) return;
-    const res = await fetch(`/api/admin/companies.php?name=${encodeURIComponent(name)}`, { method: "POST" });
-    if (res.ok) {
-      nameInput.value = "";
-      companyModal?.classList.remove("active");
-      (window as any).cargarDatos(true);
-    }
-  });
-</script>
 
 <style>
   * { box-sizing: border-box; }

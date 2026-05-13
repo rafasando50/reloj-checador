@@ -48,24 +48,27 @@ import Layout from "../../layouts/Layout.astro";
             </svg>
           </div>
           <p>Solicitando permisos de cámara...</p>
-          <div class="info-icon-corner">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#94a3b8"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              ><circle cx="12" cy="12" r="10"></circle><line
-                x1="12"
-                y1="16"
-                x2="12"
-                y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </div>
+        </div>
+
+        {/* Botón de Configuración de Estación */}
+        <button id="btn-config-estacion" class="btn-config-estacion" title="Configurar Estación">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span id="estacion-actual-label" class="estacion-label">Remoto</span>
+        </button>
+      </div>
+    </div>
+
+    {/* Modal Configuración Estación */}
+    <div id="modal-estacion" class="modal">
+      <div class="modal-content card-premium">
+        <h2>Configurar Estación</h2>
+        <p>Asigna un nombre a este dispositivo para identificar la ubicación en los reportes.</p>
+        <div class="input-group">
+          <input type="text" id="input-nombre-estacion" placeholder="Ej: Oficina, Recepción..." class="input-premium" />
+        </div>
+        <div class="modal-actions">
+          <button id="btn-cerrar-modal-est" class="btn-premium outline">Cancelar</button>
+          <button id="btn-guardar-estacion" class="btn-premium primary">Guardar</button>
         </div>
       </div>
     </div>
@@ -94,12 +97,15 @@ import Layout from "../../layouts/Layout.astro";
         html5QrcodeScanner.pause(true);
       } catch (e) {}
 
+      const estacionActual = localStorage.getItem('estacion_nombre') || 'Remoto';
+
       fetch("/api/check.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           empleado_id: decodedText,
           tipo: tipoMovimiento,
+          estacion: estacionActual
         }),
       })
         .then(async (response) => {
@@ -147,6 +153,40 @@ import Layout from "../../layouts/Layout.astro";
     );
 
     html5QrcodeScanner.render(onScanSuccess, () => {});
+
+    // Lógica de Estación
+    const btnConfig = document.getElementById('btn-config-estacion');
+    const modalEst = document.getElementById('modal-estacion');
+    const inputNombre = document.getElementById('input-nombre-estacion');
+    const btnGuardar = document.getElementById('btn-guardar-estacion');
+    const btnCerrar = document.getElementById('btn-cerrar-modal-est');
+    const labelEstacion = document.getElementById('estacion-actual-label');
+
+    function actualizarLabel() {
+      const nombre = localStorage.getItem('estacion_nombre') || 'Remoto';
+      if (labelEstacion) labelEstacion.textContent = nombre;
+    }
+
+    actualizarLabel();
+
+    btnConfig?.addEventListener('click', () => {
+      if (inputNombre) (inputNombre as HTMLInputElement).value = localStorage.getItem('estacion_nombre') || '';
+      modalEst?.classList.add('active');
+    });
+
+    btnCerrar?.addEventListener('click', () => modalEst?.classList.remove('active'));
+
+    btnGuardar?.addEventListener('click', () => {
+      const nuevo = (inputNombre as HTMLInputElement).value.trim();
+      localStorage.setItem('estacion_nombre', nuevo || 'Remoto');
+      actualizarLabel();
+      modalEst?.classList.remove('active');
+    });
+
+    // Cerrar al clickear fuera
+    window.addEventListener('click', (e) => {
+      if (e.target === modalEst) modalEst?.classList.remove('active');
+    });
 
     setTimeout(() => {
       if (placeholder) placeholder.style.opacity = "0";
@@ -273,6 +313,66 @@ import Layout from "../../layouts/Layout.astro";
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .btn-config-estacion {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 15;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .btn-config-estacion:hover {
+    background: white;
+    color: #4a90e2;
+    border-color: #4a90e2;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .estacion-label {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Modal Styles */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1.5rem;
+  }
+  .modal.active { display: flex; }
+  .modal-content {
+    width: 100%;
+    max-width: 450px;
+    padding: 2.5rem !important;
+    text-align: center;
+  }
+  .modal h2 { margin-top: 0; color: #273469; font-weight: 900; }
+  .modal p { color: #64748b; font-size: 0.95rem; margin-bottom: 2rem; }
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1rem;
+    margin-top: 2rem;
   }
 
   .scanner-placeholder {

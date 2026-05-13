@@ -97,6 +97,8 @@ import Layout from "../../layouts/Layout.astro";
               <th>Empleado</th>
               <th>Entrada</th>
               <th>Salida</th>
+              <th>Ubicación E.</th>
+              <th>Ubicación S.</th>
               <th>Estado</th>
               <th>Puntualidad</th>
             </tr>
@@ -165,13 +167,15 @@ import Layout from "../../layouts/Layout.astro";
     const cuerpo = document.getElementById("tabla-cuerpo");
     if (cuerpo) {
       if (data.length === 0) {
-        cuerpo.innerHTML = '<tr><td colspan="5" class="sin-registros">No hay registros el día de hoy.</td></tr>';
+        cuerpo.innerHTML = '<tr><td colspan="7" class="sin-registros">No hay registros el día de hoy.</td></tr>';
       } else {
         cuerpo.innerHTML = data.map(row => `
           <tr>
             <td class="nombre">${row.full_name}</td>
             <td>${row.entrada ? new Date(row.entrada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</td>
             <td>${row.salida ? new Date(row.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</td>
+            <td style="font-size: 0.8rem; color: #64748b;">${row.entrada_estacion || "-"}</td>
+            <td style="font-size: 0.8rem; color: #64748b;">${row.salida ? (row.salida_estacion || "-") : "-"}</td>
             <td>
               <span class="badge-status ${row.salida ? 'completado' : 'pendiente'}">
                 ${row.salida ? "Completado" : "En Turno"}

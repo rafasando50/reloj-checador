@@ -150,6 +150,8 @@ import Layout from "../../layouts/Layout.astro";
               <th>Empleado</th>
               <th>Entrada</th>
               <th>Salida</th>
+              <th>Ubicación E.</th>
+              <th>Ubicación S.</th>
               <th>Estado</th>
               <th>Puntualidad</th>
             </tr>
@@ -248,6 +250,8 @@ import Layout from "../../layouts/Layout.astro";
             <td class="nombre">${r.full_name}</td>
             <td>${r.entrada ? new Date(r.entrada).toLocaleString() : "-"}</td>
             <td>${r.salida ? new Date(r.salida).toLocaleString() : "-"}</td>
+            <td style="font-size: 0.8rem; color: #64748b;">${r.entrada_estacion || "-"}</td>
+            <td style="font-size: 0.8rem; color: #64748b;">${r.salida ? (r.salida_estacion || "-") : "-"}</td>
             <td>
               <span class="badge-status ${r.salida ? 'completado' : 'pendiente'}">
                 ${r.salida ? "Completado" : "En Turno"}
@@ -287,9 +291,10 @@ import Layout from "../../layouts/Layout.astro";
     const excelData = data.map(r => ({
       'Empleado': r.full_name,
       'ID': r.employee_id,
-      'Empresa': r.company,
       'Entrada': r.entrada ? new Date(r.entrada).toLocaleString() : "-",
       'Salida': r.salida ? new Date(r.salida).toLocaleString() : "En Turno",
+      'Ubicación Entrada': r.entrada_estacion || "Remoto",
+      'Ubicación Salida': r.salida ? (r.salida_estacion || "Remoto") : "-",
       'Puntualidad': r.puntualidad
     }));
 

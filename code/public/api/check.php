@@ -28,6 +28,7 @@ if (!$qrTimestamp || ($ahora - $qrTimestamp) > 15000) {
 }
 
 $employee_id = $parts[0];
+$estacion = $data['estacion'] ?? 'Remoto';
 
 // Verificar empleado
 $stmt = $conn->prepare("SELECT full_name FROM users WHERE employee_id = ? AND active = 1");
@@ -36,8 +37,8 @@ $stmt->execute();
 $resEmp = $stmt->get_result();
 
 if ($resEmp->num_rows === 0) {
-    echo json_encode(['error' => 'Empleado no encontrado o inactivo']);
     http_response_code(400);
+    echo json_encode(['error' => 'Empleado no encontrado o inactivo']);
     exit;
 }
 
@@ -46,7 +47,7 @@ $name = $user['full_name'];
 
 if ($tipo === 'Entrada') {
     $hoy = date('Y-m-d 00:00:00');
-    $stmt = $conn->prepare("SELECT id FROM registros WHERE empleado_id = ? AND hora_entrada >= ?");
+    $stmt = $conn->prepare("SELECT id FROM registros WHERE empleado_id = ? AND hora_entrada >= ? AND hora_salida IS NULL");
     $stmt->bind_param("ss", $employee_id, $hoy);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0) {
@@ -55,8 +56,8 @@ if ($tipo === 'Entrada') {
         exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO registros (empleado_id, hora_entrada) VALUES (?, NOW())");
-    $stmt->bind_param("s", $employee_id);
+    $stmt = $conn->prepare("INSERT INTO registros (empleado_id, hora_entrada, entrada_estacion) VALUES (?, NOW(), ?)");
+    $stmt->bind_param("ss", $employee_id, $estacion);
     $stmt->execute();
 } else {
     // Verificar si tiene una entrada hoy que no tenga salida
@@ -73,8 +74,8 @@ if ($tipo === 'Entrada') {
     }
 
     $registro = $resSalida->fetch_assoc();
-    $stmt = $conn->prepare("UPDATE registros SET hora_salida = NOW() WHERE id = ?");
-    $stmt->bind_param("i", $registro['id']);
+    $stmt = $conn->prepare("UPDATE registros SET hora_salida = NOW(), salida_estacion = ? WHERE id = ?");
+    $stmt->bind_param("si", $estacion, $registro['id']);
     $stmt->execute();
 }
 
