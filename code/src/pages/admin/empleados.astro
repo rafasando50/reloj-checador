@@ -128,7 +128,13 @@ import Layout from "../../layouts/Layout.astro";
     (document.getElementById("field-id") as HTMLInputElement).value = user.employee_id;
     (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
     (document.getElementById("field-puesto") as HTMLInputElement).value = user.puesto || "";
-    (document.getElementById("field-horario") as HTMLSelectElement).value = user.tipo_horario || "Tiempo Completo";
+    
+    // Actualizar Custom Select de Horario
+    const horario = user.tipo_horario || "Tiempo Completo";
+    (document.getElementById("horario-hidden") as HTMLInputElement).value = horario;
+    (document.getElementById("selected-horario-label") as HTMLElement).innerText = horario === "Practicante Vespertino" ? "Practicante Vespertino (1:00 PM)" : (horario === "Practicante Matutino" ? "Practicante Matutino (8:00 AM)" : "Tiempo Completo (8:00 AM)");
+    document.querySelectorAll('#horario-options .option').forEach(o => o.classList.remove('selected'));
+    document.querySelector(`#horario-options .option[data-value="${horario}"]`)?.classList.add('selected');
     
     const errCont = document.getElementById("modal-error-container");
     if (errCont) errCont.style.display = "none";
@@ -169,6 +175,13 @@ import Layout from "../../layouts/Layout.astro";
       (document.getElementById("user-id") as HTMLInputElement).value = "";
       const errCont = document.getElementById("modal-error-container");
       if (errCont) errCont.style.display = "none";
+      
+      // Resetear Horario Custom Select
+      (document.getElementById("horario-hidden") as HTMLInputElement).value = "Tiempo Completo";
+      (document.getElementById("selected-horario-label") as HTMLElement).innerText = "Tiempo Completo (8:00 AM)";
+      document.querySelectorAll('#horario-options .option').forEach(o => o.classList.remove('selected'));
+      document.querySelector('#horario-options .option[data-value="Tiempo Completo"]')?.classList.add('selected');
+
       seleccionarEmpresa("Einsur"); // Resetear el selector al valor por defecto
       document.getElementById("modal-title").textContent = "Nuevo Empleado";
       modal?.classList.add("active");
@@ -193,6 +206,34 @@ import Layout from "../../layouts/Layout.astro";
     window.addEventListener('click', () => {
       optionsMenu?.classList.remove('active');
       trigger?.classList.remove('active');
+      document.getElementById('horario-options')?.classList.remove('active');
+      document.getElementById('horario-trigger')?.classList.remove('active');
+    });
+
+    // --- Lógica del Custom Select (Horarios) ---
+    const hTrigger = document.getElementById('horario-trigger');
+    const hOptions = document.getElementById('horario-options');
+    
+    hTrigger?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hOptions?.classList.toggle('active');
+      hTrigger?.classList.toggle('active');
+      // Cerrar el de empresas si está abierto
+      optionsMenu?.classList.remove('active');
+      trigger?.classList.remove('active');
+    });
+
+    document.querySelectorAll('#horario-options .option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const val = (opt as HTMLElement).dataset.value;
+        const text = (opt as HTMLElement).innerText;
+        (document.getElementById('horario-hidden') as HTMLInputElement).value = val;
+        (document.getElementById('selected-horario-label') as HTMLElement).innerText = text;
+        document.querySelectorAll('#horario-options .option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        hOptions?.classList.remove('active');
+        hTrigger?.classList.remove('active');
+      });
     });
     
     // Formulario Usuario
@@ -340,7 +381,7 @@ import Layout from "../../layouts/Layout.astro";
             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <input type="password" name="password" id="field-pass" placeholder="Contraseña" />
           </div>
-          <div class="input-container">
+          <div class="input-container full-width">
             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
             <input type="text" name="puesto" id="field-puesto" placeholder="Puesto / Cargo" />
           </div>
@@ -349,14 +390,22 @@ import Layout from "../../layouts/Layout.astro";
             <input type="text" name="department" id="field-dept" placeholder="Departamento" />
           </div>
           <div class="input-container full-width">
-            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 5px; margin-left: 5px;">TURNO / HORARIO</label>
-            <select name="tipo_horario" id="field-horario" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; background: #f8fafc; font-weight: 600; color: #1e293b; appearance: none; cursor: pointer;">
-              <option value="Tiempo Completo">Tiempo Completo (8:00 AM)</option>
-              <option value="Practicante Matutino">Practicante Matutino (8:00 AM)</option>
-              <option value="Practicante Vespertino">Practicante Vespertino (1:00 PM)</option>
-            </select>
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 8px; margin-left: 5px; text-transform: uppercase; letter-spacing: 0.5px;">TURNO / HORARIO</label>
+            <div class="custom-select-wrapper" style="font-family: 'Inter', sans-serif;">
+              <input type="hidden" name="tipo_horario" id="horario-hidden" value="Tiempo Completo" />
+              <div class="custom-select-trigger" id="horario-trigger" style="font-family: 'Inter', sans-serif;">
+                <span id="selected-horario-label">Tiempo Completo (8:00 AM)</span>
+                <svg class="arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <div class="custom-options" id="horario-options" style="font-family: 'Inter', sans-serif;">
+                <div class="option selected" data-value="Tiempo Completo">Tiempo Completo (8:00 AM)</div>
+                <div class="option" data-value="Practicante Matutino">Practicante Matutino (8:00 AM)</div>
+                <div class="option" data-value="Practicante Vespertino">Practicante Vespertino (1:00 PM)</div>
+              </div>
+            </div>
           </div>
           <div class="input-container full-width">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 8px; margin-left: 5px; text-transform: uppercase; letter-spacing: 0.5px;">EMPRESA</label>
             <div class="custom-select-wrapper">
               <input type="hidden" name="company" id="company-hidden" value="Einsur" />
               <div class="custom-select-trigger" id="company-trigger">

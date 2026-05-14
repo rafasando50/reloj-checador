@@ -3,7 +3,8 @@ require_once 'db.php';
 
 $start = $_GET['start'] ?? '';
 $end = $_GET['end'] ?? '';
-$empId = $_GET['employee_id'] ?? '';
+$search = $_GET['search'] ?? '';
+$company = $_GET['company'] ?? '';
 
 if (!$start || !$end) {
     $start = date('Y-m-01');
@@ -18,9 +19,17 @@ $query = "SELECT r.id, r.empleado_id, r.hora_entrada AS entrada, r.hora_salida A
 $params = [$start . ' 00:00:00', $end . ' 23:59:59'];
 $types = "ss";
 
-if ($empId) {
-    $query .= " AND r.empleado_id = ?";
-    $params[] = $empId;
+if ($search) {
+    $query .= " AND (u.full_name LIKE ? OR u.employee_id LIKE ?)";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "ss";
+}
+
+if ($company) {
+    $query .= " AND u.company = ?";
+    $params[] = $company;
     $types .= "s";
 }
 

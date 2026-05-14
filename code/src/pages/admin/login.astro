@@ -4,7 +4,11 @@ import Layout from "../../layouts/Layout.astro";
 
 <script>
   // Verificar sesión admin en el cliente
-  if (document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+  if (
+    document.cookie
+      .split(";")
+      .some((item) => item.trim().startsWith("admin_session="))
+  ) {
     window.location.replace("/admin/hoy");
   }
 </script>
@@ -46,8 +50,8 @@ import Layout from "../../layouts/Layout.astro";
           </svg>
         </div>
 
-        <h1 class="main-title">Acceso Admin</h1>
-        <p class="subtitle">Acceso al Panel de Control</p>
+        <h1 class="main-title">Bienvenido a EG Access</h1>
+        <p class="subtitle">Sistema de asistencias de Einsur Global</p>
 
         <form id="admin-login-form" class="login-form">
           <div class="input-container">

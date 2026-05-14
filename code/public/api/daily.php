@@ -1,7 +1,7 @@
 <?php
 require_once 'db.php';
 
-$empId = $_GET['employee_id'] ?? '';
+$search = $_GET['search'] ?? '';
 $company = $_GET['company'] ?? '';
 
 $query = "SELECT r.id, r.empleado_id, r.hora_entrada AS entrada, r.hora_salida AS salida, u.full_name, u.company, r.entrada_estacion, r.salida_estacion, u.hora_entrada AS hora_esperada
@@ -12,10 +12,12 @@ $query = "SELECT r.id, r.empleado_id, r.hora_entrada AS entrada, r.hora_salida A
 $params = [];
 $types = "";
 
-if ($empId) {
-    $query .= " AND r.empleado_id = ?";
-    $params[] = $empId;
-    $types .= "s";
+if ($search) {
+    $query .= " AND (u.full_name LIKE ? OR r.empleado_id LIKE ?)";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "ss";
 }
 if ($company) {
     $query .= " AND u.company = ?";

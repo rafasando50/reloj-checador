@@ -73,18 +73,21 @@ import Layout from "../../layouts/Layout.astro";
               </div>
             </div>
           </div>
-          <div class="input-group">
-            <label>Empleado ID:</label>
+          <div class="input-group" style="width: 220px;">
+            <label>Empleado:</label>
             <input
               type="text"
-              id="empleado-id"
-              placeholder="Todos"
+              id="empleado-search"
+              placeholder="Nombre o ID"
               class="input-premium"
             />
           </div>
-          <div class="input-group button-group">
-            <button id="btn-buscar" class="btn-premium primary">
+          <div class="input-group button-group" style="flex-direction: row; gap: 0.8rem; align-items: flex-end; width: 340px;">
+            <button id="btn-buscar" class="btn-premium primary" style="flex: 0.8; height: 40px; font-size: 0.9rem;">
                Buscar
+            </button>
+            <button id="btn-limpiar" class="btn-premium outline" style="flex: 1.5; height: 40px; font-size: 0.9rem;">
+               Limpiar Filtros
             </button>
           </div>
         </div>
@@ -105,7 +108,7 @@ import Layout from "../../layouts/Layout.astro";
           </thead>
           <tbody id="tabla-cuerpo">
             <tr>
-              <td colspan="5" class="sin-registros">Cargando registros...</td>
+              <td colspan="7" class="sin-registros">Cargando registros...</td>
             </tr>
           </tbody>
         </table>
@@ -158,10 +161,10 @@ import Layout from "../../layouts/Layout.astro";
   });
 
   async function cargarHoy() {
-    const empId = (document.getElementById("empleado-id") as HTMLInputElement)?.value || "";
+    const search = (document.getElementById("empleado-search") as HTMLInputElement)?.value || "";
     const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement)?.value || "";
     
-    const res = await fetch(`/api/daily.php?employee_id=${empId}&company=${empresa}`);
+    const res = await fetch(`/api/daily.php?search=${encodeURIComponent(search)}&company=${encodeURIComponent(empresa)}`);
     const data = await res.json();
     
     const cuerpo = document.getElementById("tabla-cuerpo");
@@ -194,6 +197,20 @@ import Layout from "../../layouts/Layout.astro";
 
   document.addEventListener("DOMContentLoaded", cargarHoy);
   document.getElementById("btn-buscar")?.addEventListener("click", cargarHoy);
+
+  // Buscar al presionar Enter en el input
+  document.getElementById("empleado-search")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      cargarHoy();
+    }
+  });
+
+  // Lógica para limpiar filtros
+  document.getElementById("btn-limpiar")?.addEventListener("click", () => {
+    (document.getElementById("empleado-search") as HTMLInputElement).value = "";
+    seleccionarEmpresa(""); // Resetear a "Todas"
+    cargarHoy(); // Buscar automáticamente tras limpiar
+  });
 </script>
 
 <style>
@@ -216,11 +233,13 @@ import Layout from "../../layouts/Layout.astro";
   .filtros-seccion { width: 100%; margin-bottom: 3rem; }
   
   .filtros-grid { 
-    display: grid; 
-    grid-template-columns: 140px 1fr 140px; 
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1.5rem; 
     align-items: flex-end; 
-    max-width: 800px;
+    width: 100%;
+    max-width: 1000px;
     margin: 0 auto;
   }
 
@@ -274,7 +293,7 @@ import Layout from "../../layouts/Layout.astro";
   .sin-registros { 
     text-align: center; 
     color: #94a3b8; 
-    padding: 4rem; 
+    padding: 5rem 1rem; 
     font-style: italic; 
     font-size: 1.1rem;
     font-weight: 500;
@@ -296,8 +315,9 @@ import Layout from "../../layouts/Layout.astro";
     .contenedor-principal { padding: 2rem 1rem; }
     .daily-card { padding: 2rem !important; }
     .titulo-principal { font-size: 2.5rem; margin-bottom: 2rem; }
-    .filtros-grid { grid-template-columns: 1fr 1fr; max-width: 100%; }
-    .button-group { grid-column: span 2; }
+    .filtros-grid { flex-direction: row; justify-content: center; }
+    .input-group { width: 45% !important; }
+    .button-group { width: 100% !important; justify-content: center; }
     th:nth-child(4), td:nth-child(4) { display: none; } /* Ocultar Estado en tablet */
   }
 
@@ -309,8 +329,9 @@ import Layout from "../../layouts/Layout.astro";
       margin-top: -1.5rem; /* Subir la tarjeta */
     }
     .titulo-principal { font-size: 2rem; margin-bottom: 1.5rem; text-align: left; width: 100%; }
-    .filtros-grid { grid-template-columns: 1fr; gap: 1rem; }
-    .button-group { grid-column: span 1; }
+    .filtros-grid { flex-direction: column; align-items: stretch; }
+    .input-group { width: 100% !important; }
+    .button-group { width: 100% !important; }
     
     .tabla-container { border-radius: 12px; margin-bottom: 1.5rem; }
     th { padding: 0.8rem 0.5rem; font-size: 0.7rem; }
