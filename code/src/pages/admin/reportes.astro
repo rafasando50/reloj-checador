@@ -4,51 +4,6 @@ import Layout from "../../layouts/Layout.astro";
 
 <script is:inline src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-<script>
-  // Verificar sesión admin
-  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
-    window.location.replace("/admin/login");
-  }
-
-  // Cargar empresas dinámicamente
-  async function cargarEmpresas() {
-    try {
-      const res = await fetch("/api/companies.php");
-      const companies = await res.json();
-      const optionsContainer = document.getElementById("company-options");
-      if (optionsContainer) {
-        optionsContainer.innerHTML = '<div class="option selected" data-value="">Todas</div>';
-        companies.forEach(c => {
-          const div = document.createElement("div");
-          div.className = "option";
-          div.dataset.value = c.name;
-          div.textContent = c.name;
-          div.onclick = () => seleccionarEmpresa(c.name);
-          optionsContainer.appendChild(div);
-        });
-      }
-    } catch (e) {
-      console.error("Error al cargar empresas:", e);
-    }
-  }
-
-  function seleccionarEmpresa(name) {
-    const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
-    if (hiddenInput) hiddenInput.value = name;
-    const labelEl = document.getElementById('selected-company-label');
-    if (labelEl) labelEl.innerText = name || "Todas";
-    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
-    document.querySelector(`.option[data-value="${name}"]`)?.classList.add('selected');
-    document.getElementById('company-options')?.classList.remove('active');
-    document.getElementById('company-trigger')?.classList.remove('active');
-    // @ts-ignore
-    document.getElementById("btn-buscar")?.click();
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    cargarEmpresas();
-  });
-</script>
 
 <Layout title="Reportes Globales">
   <main class="contenedor-principal">
@@ -178,6 +133,50 @@ import Layout from "../../layouts/Layout.astro";
 </Layout>
 
 <script>
+  // Verificar sesión admin
+  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+    window.location.replace("/admin/login");
+  }
+
+  // Cargar empresas dinámicamente
+  async function cargarEmpresas() {
+    try {
+      const res = await fetch("/api/companies.php");
+      const companies = await res.json();
+      const optionsContainer = document.getElementById("company-options");
+      if (optionsContainer) {
+        optionsContainer.innerHTML = '<div class="option selected" data-value="">Todas</div>';
+        companies.forEach(c => {
+          const div = document.createElement("div");
+          div.className = "option";
+          div.dataset.value = c.name;
+          div.textContent = c.name;
+          div.onclick = () => seleccionarEmpresa(c.name);
+          optionsContainer.appendChild(div);
+        });
+      }
+    } catch (e) {
+      console.error("Error al cargar empresas:", e);
+    }
+  }
+
+  function seleccionarEmpresa(name) {
+    const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
+    if (hiddenInput) hiddenInput.value = name;
+    const labelEl = document.getElementById('selected-company-label');
+    if (labelEl) labelEl.innerText = name || "Todas";
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    document.querySelector(`.option[data-value="${name}"]`)?.classList.add('selected');
+    document.getElementById('company-options')?.classList.remove('active');
+    document.getElementById('company-trigger')?.classList.remove('active');
+    // @ts-ignore
+    document.getElementById("btn-buscar")?.click();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarEmpresas();
+  });
+
   // Lógica para el Custom Dropdown
   const trigger = document.getElementById('company-trigger');
   const options = document.getElementById('company-options');

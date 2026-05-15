@@ -38,23 +38,73 @@ const modules = [
   if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
     window.location.replace("/admin/login");
   }
+
+  async function cargarDashboard() {
+    if (window.innerWidth < 1024) return;
+    
+    try {
+      const res = await fetch("/api/daily.php?mode=dashboard");
+      const data = await res.json();
+      
+      const elEntradas = document.getElementById('stat-entradas');
+      const elRetardos = document.getElementById('stat-retardos');
+      if (elEntradas) elEntradas.textContent = data.today_count.toString();
+      if (elRetardos) elRetardos.textContent = data.week_delays.toString();
+      
+      const list = document.getElementById('recent-list');
+      if (list) {
+        if (!data.recent || data.recent.length === 0) {
+          list.innerHTML = '<div class="empty-state">No hay actividad hoy</div>';
+        } else {
+          list.innerHTML = data.recent.map((r) => {
+            const statusClass = (r.puntualidad || 'a-tiempo').toLowerCase().replace(/\s+/g, '-');
+            return `
+              <div class="recent-item-new">
+                <div class="status-circle ${statusClass}"></div>
+                <div class="recent-info-new">
+                  <span class="recent-name-new">${r.full_name}</span>
+                  <span class="recent-time-new">${new Date(r.entrada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    } catch (e) {
+      console.error("Error cargando dashboard stats:", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", cargarDashboard);
 </script>
 
 
 <Layout title="Panel de Control">
   <main class="dashboard-container">
-    {/* Fondo industrial solo para desktop */}
-    <div class="desktop-bg">
-      <img
-        src="/images/dashboard-bg.png"
-        alt="Industrial Background"
-        class="bg-img"
-      />
-      <div class="bg-overlay"></div>
-    </div>
-
     <div class="welcome-header">
       <h1 class="gradient-text">Panel de Control</h1>
+    </div>
+
+    <!-- Stats Row (Desktop Only) -->
+    <div class="stats-row">
+      <div class="stat-card card-premium">
+        <div class="stat-icon" style="background: #4A90E2; color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-entradas">0</span>
+          <span class="stat-label">Entradas Hoy</span>
+        </div>
+      </div>
+      <div class="stat-card card-premium">
+        <div class="stat-icon" style="background: #F59E0B; color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-retardos">0</span>
+          <span class="stat-label">Retardos (Semana)</span>
+        </div>
+      </div>
     </div>
 
     <div class="modules-grid">
@@ -161,6 +211,17 @@ const modules = [
         ))
       }
     </div>
+
+    <!-- Recent Activity (Desktop Only) -->
+    <aside class="recent-activity-aside card-premium">
+      <div class="section-header">
+        <h3>Actividad Reciente</h3>
+        <a href="/admin/hoy" class="view-all">Ver todos</a>
+      </div>
+      <div id="recent-list" class="recent-list">
+        <div class="loading-state">Cargando actividad...</div>
+      </div>
+    </aside>
   </main>
 </Layout>
 
@@ -176,51 +237,53 @@ const modules = [
     z-index: 1;
   }
 
-  /* Desktop Background */
-  .desktop-bg {
-    position: fixed;
-    inset: 0;
-    z-index: -10;
-    display: none;
-    overflow: hidden;
-  }
+  /* Dashboard styles */
 
-  .bg-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: brightness(0.6) contrast(1.1);
-  }
-
-  .bg-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(15, 23, 42, 0.6) 0%,
-      rgba(15, 23, 42, 0.8) 100%
-    );
-    backdrop-filter: blur(2px);
-  }
+  /* Dashboard styles */
+  .stats-row, .recent-activity-aside { display: none; }
 
   @media (min-width: 1024px) {
-    .desktop-bg {
-      display: block;
-    }
     .dashboard-container {
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      grid-template-rows: auto auto 1fr;
+      gap: 2rem;
       min-height: calc(100vh - 64px);
-      padding: 2rem 1.5rem;
-      background: transparent !important;
-      justify-content: flex-start;
-      padding-top: 8vh;
+      padding: 3rem 1.5rem;
+      background: white !important;
+      align-items: start;
     }
+
+    .welcome-header { grid-column: 1 / span 2; margin-bottom: 1rem; }
+    
+    .stats-row { 
+      grid-column: 1 / span 2; 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 1.5rem; 
+      margin-bottom: 1rem; 
+    }
+
+    .modules-grid { grid-column: 1; grid-row: 3; }
+
+    .recent-activity-aside { 
+      display: block; 
+      grid-column: 2; 
+      grid-row: 3; 
+      padding: 1.5rem !important;
+      border-radius: 24px;
+      height: 100%;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
     .gradient-text {
       -webkit-text-fill-color: transparent !important;
       background: linear-gradient(
         to right,
         #4a90e2 0%,
-        #ffffff 50%,
-        #4a90e2 100%
+        #273469 100%
       ) !important;
       background-size: 200% auto !important;
       -webkit-background-clip: text !important;
@@ -229,8 +292,109 @@ const modules = [
     }
     .module-card {
       background: white !important;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
     }
+  }
+
+  /* Stat Cards */
+  .stat-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem !important;
+    border-radius: 24px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  }
+  .stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #1e293b;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  /* Recent Activity Refined */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .section-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1e293b;
+  }
+  .view-all {
+    font-size: 0.8rem;
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  :global(.recent-list) {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  :global(.recent-item-new) {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+  }
+  :global(.status-circle) {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+  :global(.status-circle.a-tiempo) { background: #34d399 !important; box-shadow: 0 0 8px rgba(52, 211, 153, 0.4); }
+  :global(.status-circle.retardo) { background: #fbbf24 !important; box-shadow: 0 0 8px rgba(251, 191, 36, 0.4); }
+  :global(.status-circle.falta) { background: #f87171 !important; box-shadow: 0 0 8px rgba(248, 113, 113, 0.4); }
+
+  :global(.recent-info-new) {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  :global(.recent-name-new) {
+    font-size: 0.95rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+  :global(.recent-time-new) {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  .loading-state, .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    font-weight: 500;
   }
 
   @keyframes shine {
@@ -268,9 +432,10 @@ const modules = [
     padding: 2rem !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    border: 2px solid transparent;
+    border: 1px solid #e2e8f0;
     border-radius: 24px;
     background: white;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
   }
 
   .module-card:hover {

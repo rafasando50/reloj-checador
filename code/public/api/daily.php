@@ -52,5 +52,27 @@ while ($row = $result->fetch_assoc()) {
     $data[] = $row;
 }
 
-echo json_encode($data);
+if (isset($_GET['mode']) && $_GET['mode'] === 'dashboard') {
+    // Calcular retardos de la semana
+    $week_q = "SELECT r.hora_entrada, u.hora_entrada AS hora_esperada 
+               FROM registros r 
+               JOIN users u ON r.empleado_id = u.employee_id 
+               WHERE r.hora_entrada >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+    $week_res = $conn->query($week_q);
+    $week_delays = 0;
+    while($row_w = $week_res->fetch_assoc()) {
+        $real_w = strtotime($row_w['hora_entrada']);
+        $esp_w = $row_w['hora_esperada'] ?? '08:00:00';
+        $esp_ts_w = strtotime(date('Y-m-d ', $real_w) . $esp_w);
+        if (($real_w - $esp_ts_w) / 60 > 6) $week_delays++;
+    }
+
+    echo json_encode([
+        "today_count" => count($data),
+        "week_delays" => $week_delays,
+        "recent" => array_slice($data, 0, 5)
+    ]);
+} else {
+    echo json_encode($data);
+}
 ?>
