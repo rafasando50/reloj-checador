@@ -2,7 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 ---
 
-<script is:inline src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 
 
 <Layout title="Reportes Globales">
@@ -303,28 +303,69 @@ import Layout from "../../layouts/Layout.astro";
       return;
     }
 
-    // Formatear datos para Excel
-    const excelData = data.map(r => ({
-      'Empleado': r.full_name,
-      'ID': r.employee_id,
-      'Entrada': r.entrada ? new Date(r.entrada).toLocaleString() : "-",
-      'Salida': r.salida ? new Date(r.salida).toLocaleString() : "En Turno",
-      'Ubicación Entrada': r.entrada_estacion || "Remoto",
-      'Ubicación Salida': r.salida ? (r.salida_estacion || "Remoto") : "-",
-      'Puntualidad': r.puntualidad
-    }));
+    // Usar ExcelJS para exportar con estilos
+    // @ts-ignore
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Reporte de Asistencia');
 
-    // Crear libro y hoja
-    // @ts-ignore
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    // @ts-ignore
-    const wb = XLSX.utils.book_new();
-    // @ts-ignore
-    XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+    // Configurar columnas
+    worksheet.columns = [
+      { header: 'Empleado', key: 'empleado', width: 35 },
+      { header: 'ID', key: 'id', width: 15 },
+      { header: 'Entrada', key: 'entrada', width: 22 },
+      { header: 'Salida', key: 'salida', width: 22 },
+      { header: 'Ubicación Entrada', key: 'ubi_entrada', width: 25 },
+      { header: 'Ubicación Salida', key: 'ubi_salida', width: 25 },
+      { header: 'Puntualidad', key: 'puntualidad', width: 20 }
+    ];
 
-    // Descargar
-    // @ts-ignore
-    XLSX.writeFile(wb, `Reporte_Asistencia_${inicio}_al_${fin}.xlsx`);
+    // Estilo de la cabecera
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF273469' } // Azul oscuro
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 30;
+
+    // Agregar datos
+    data.forEach((r, index) => {
+      const isCompletado = r.salida ? true : false;
+      const row = worksheet.addRow({
+        empleado: r.full_name,
+        id: r.employee_id,
+        entrada: r.entrada ? new Date(r.entrada).toLocaleString() : "-",
+        salida: isCompletado ? new Date(r.salida).toLocaleString() : "En Turno",
+        ubi_entrada: r.entrada_estacion || "Remoto",
+        ubi_salida: isCompletado ? (r.salida_estacion || "Remoto") : "-",
+        puntualidad: r.puntualidad
+      });
+
+      // Estilo por fila (colores alternos y alineación)
+      row.alignment = { vertical: 'middle', horizontal: 'center' };
+      
+      // Alinear el nombre a la izquierda
+      row.getCell('empleado').alignment = { vertical: 'middle', horizontal: 'left' };
+
+      // Colorear celda de puntualidad
+      const celdaPuntualidad = row.getCell('puntualidad');
+      celdaPuntualidad.font = { bold: true };
+      if (r.puntualidad === 'A Tiempo') celdaPuntualidad.font.color = { argb: 'FF059669' }; // Verde
+      else if (r.puntualidad === 'Retardo') celdaPuntualidad.font.color = { argb: 'FFD97706' }; // Naranja
+      else if (r.puntualidad === 'Falta') celdaPuntualidad.font.color = { argb: 'FFDC2626' }; // Rojo
+    });
+
+    // Descargar archivo
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_Asistencia_${inicio}_al_${fin}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   });
 
   // Lógica para limpiar filtros

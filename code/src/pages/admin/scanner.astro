@@ -437,4 +437,54 @@ import Layout from "../../layouts/Layout.astro";
     border-radius: 8px !important;
     font-weight: 700 !important;
   }
+
+  /* Ajustes para Móvil */
+  @media (max-width: 768px) {
+    .contenedor-principal {
+      padding: 1rem;
+    }
+    .scanner-card {
+      padding: 1.5rem !important;
+      width: 100%;
+    }
+    .btn-premium {
+      min-width: unset;
+      height: 46px;
+      font-size: 0.95rem;
+      padding: 0 1rem;
+    }
+    .radio-texto {
+      min-width: unset !important;
+    }
+    .opciones-movimiento {
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .scanner-box {
+      min-height: 55vh;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .contenedor-principal {
+      padding: 0.5rem;
+    }
+    .scanner-card {
+      padding: 1rem !important;
+      border-radius: 16px;
+    }
+    .opciones-movimiento {
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .btn-premium {
+      height: 42px;
+      font-size: 0.85rem;
+      gap: 4px;
+    }
+    .scanner-box {
+      min-height: 65vh;
+      border-radius: 16px;
+    }
+  }
 </style>
