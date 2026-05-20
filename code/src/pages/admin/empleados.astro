@@ -74,7 +74,7 @@ import Layout from "../../layouts/Layout.astro";
             <div class="col-id" style="text-align: center;"><code class="id-code" style="background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569;">${u.employee_id}</code></div>
             <div class="col-dept" style="text-align: left; color: #475569;">${u.department || "-"}</div>
             <div class="col-company" style="text-align: center;">
-              <span class="tag-${(u.company || 'default').toLowerCase()}">
+              <span class="tag-${(u.company || 'default').toLowerCase().replace(/\s+/g, '-')}">
                 ${u.company || "-"}
               </span>
             </div>
@@ -557,7 +557,7 @@ import Layout from "../../layouts/Layout.astro";
 
   :global(.user-name) { font-weight: 700; color: #1e293b; }
   
-  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg) { 
+  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg), :global(.tag-cafe-valentina) { 
     padding: 4px 10px; 
     border-radius: 99px; 
     font-weight: 700; 
@@ -566,6 +566,7 @@ import Layout from "../../layouts/Layout.astro";
   :global(.tag-innova) { color: #4A90E2; background: #eff6ff; }
   :global(.tag-einsur) { color: #273469; background: #f1f5f9; }
   :global(.tag-scg) { color: #64748b; background: #f8fafc; }
+  :global(.tag-cafe-valentina) { color: #854d0e; background: #fef9c3; }
 
   .company-tabs {
 
@@ -688,9 +689,10 @@ import Layout from "../../layouts/Layout.astro";
   .id-code { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569; }
   .badge-inactive { background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px; }
   
-  .tag-innova, .tag-einsur { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
+  .tag-innova, .tag-einsur, .tag-cafe-valentina { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
   .tag-innova { color: #4A90E2; background: #eff6ff; }
   .tag-einsur { color: #273469; background: #f1f5f9; }
+  .tag-cafe-valentina { color: #854d0e; background: #fef9c3; }
 
   .actions-cell { display: flex; gap: 10px; justify-content: center; }
   .btn-action { 
