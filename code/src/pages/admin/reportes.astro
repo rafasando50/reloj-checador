@@ -45,6 +45,22 @@ import Layout from "../../layouts/Layout.astro";
               class="input-premium"
             />
           </div>
+          <div class="input-group">
+            <label>Puntualidad:</label>
+            <div class="custom-select-wrapper">
+              <input type="hidden" id="filtro-puntualidad" value="" />
+              <div class="custom-select-trigger" id="puntualidad-trigger">
+                <span id="selected-puntualidad-label">Todas</span>
+                <svg class="arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <div class="custom-options" id="puntualidad-options">
+                <div class="option-puntualidad selected" data-value="">Todas</div>
+                <div class="option-puntualidad" data-value="A Tiempo">A Tiempo</div>
+                <div class="option-puntualidad" data-value="Retardo">Retardo</div>
+                <div class="option-puntualidad" data-value="Falta">Falta</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="botones-filtros">
@@ -177,7 +193,7 @@ import Layout from "../../layouts/Layout.astro";
     cargarEmpresas();
   });
 
-  // Lógica para el Custom Dropdown
+  // Lógica para el Custom Dropdown de Empresa
   const trigger = document.getElementById('company-trigger');
   const options = document.getElementById('company-options');
   const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
@@ -207,14 +223,46 @@ import Layout from "../../layouts/Layout.astro";
     });
   });
 
+  // Lógica para el Custom Dropdown de Puntualidad
+  const triggerPuntualidad = document.getElementById('puntualidad-trigger');
+  const optionsPuntualidad = document.getElementById('puntualidad-options');
+  const hiddenInputPuntualidad = document.getElementById('filtro-puntualidad') as HTMLInputElement;
+
+  triggerPuntualidad?.addEventListener('click', () => {
+    optionsPuntualidad?.classList.toggle('active');
+    triggerPuntualidad?.classList.toggle('active');
+  });
+
+  document.querySelectorAll('.option-puntualidad').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const val = (opt as HTMLElement).dataset.value || '';
+      const label = (opt as HTMLElement).innerText;
+      
+      if (hiddenInputPuntualidad) hiddenInputPuntualidad.value = val;
+      const labelEl = document.getElementById('selected-puntualidad-label');
+      if (labelEl) labelEl.innerText = label;
+      
+      document.querySelectorAll('.option-puntualidad').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      
+      optionsPuntualidad?.classList.remove('active');
+      triggerPuntualidad?.classList.remove('active');
+      
+      document.getElementById("btn-buscar")?.click();
+    });
+  });
+
   window.addEventListener('click', (e) => {
     if (!trigger?.contains(e.target as Node) && !options?.contains(e.target as Node)) {
       options?.classList.remove('active');
       trigger?.classList.remove('active');
     }
+    if (!triggerPuntualidad?.contains(e.target as Node) && !optionsPuntualidad?.contains(e.target as Node)) {
+      optionsPuntualidad?.classList.remove('active');
+      triggerPuntualidad?.classList.remove('active');
+    }
   });
 
-  // Script de búsqueda y exportación
   document.addEventListener("DOMContentLoaded", () => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -229,6 +277,17 @@ import Layout from "../../layouts/Layout.astro";
 
     if (inputInicio && !inputInicio.value) inputInicio.value = formatDate(firstDay);
     if (inputFin && !inputFin.value) inputFin.value = formatDate(now);
+
+    // Leer parámetro URL para retardos
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('filtro') === 'retardos') {
+      const hiddenPunt = document.getElementById('filtro-puntualidad') as HTMLInputElement;
+      if (hiddenPunt) hiddenPunt.value = 'Retardo';
+      const labelPunt = document.getElementById('selected-puntualidad-label');
+      if (labelPunt) labelPunt.innerText = 'Retardo';
+      document.querySelectorAll('.option-puntualidad').forEach(o => o.classList.remove('selected'));
+      document.querySelector('.option-puntualidad[data-value="Retardo"]')?.classList.add('selected');
+    }
 
     document.getElementById("btn-buscar")?.click();
   });
@@ -247,11 +306,16 @@ import Layout from "../../layouts/Layout.astro";
     const fin = (document.getElementById("fecha-fin") as HTMLInputElement).value;
     const search = (document.getElementById("empleado-search") as HTMLInputElement).value;
     const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement).value;
+    const puntualidadFilter = (document.getElementById("filtro-puntualidad") as HTMLInputElement)?.value || "";
 
     const res = await fetch(
       `/api/reports.php?start=${inicio}&end=${fin}&search=${encodeURIComponent(search)}&company=${encodeURIComponent(empresa)}`,
     );
-    const data = (await res.json()) as any[];
+    let data = (await res.json()) as any[];
+
+    if (puntualidadFilter) {
+      data = data.filter(r => r.puntualidad === puntualidadFilter);
+    }
 
     const cuerpo = document.getElementById("tabla-cuerpo");
     if (cuerpo) {
@@ -291,12 +355,17 @@ import Layout from "../../layouts/Layout.astro";
     const fin = (document.getElementById("fecha-fin") as HTMLInputElement).value;
     const search = (document.getElementById("empleado-search") as HTMLInputElement).value;
     const empresa = (document.getElementById("filtro-empresa") as HTMLInputElement).value;
+    const puntualidadFilter = (document.getElementById("filtro-puntualidad") as HTMLInputElement)?.value || "";
 
     // Obtener datos actuales para exportar
     const res = await fetch(
       `/api/reports.php?start=${inicio}&end=${fin}&search=${encodeURIComponent(search)}&company=${encodeURIComponent(empresa)}`,
     );
-    const data = await res.json();
+    let data = await res.json();
+
+    if (puntualidadFilter) {
+      data = data.filter((r: any) => r.puntualidad === puntualidadFilter);
+    }
 
     if (!data || data.length === 0) {
       alert("No hay datos para exportar");
@@ -381,6 +450,18 @@ import Layout from "../../layouts/Layout.astro";
     (document.getElementById("fecha-fin") as HTMLInputElement).value = formatDate(now);
     (document.getElementById("empleado-search") as HTMLInputElement).value = "";
     seleccionarEmpresa(""); // Resetear a "Todas"
+    
+    // Resetear puntualidad
+    const hiddenPunt = document.getElementById('filtro-puntualidad') as HTMLInputElement;
+    if (hiddenPunt) hiddenPunt.value = '';
+    const labelPunt = document.getElementById('selected-puntualidad-label');
+    if (labelPunt) labelPunt.innerText = 'Todas';
+    document.querySelectorAll('.option-puntualidad').forEach(o => o.classList.remove('selected'));
+    document.querySelector('.option-puntualidad[data-value=""]')?.classList.add('selected');
+
+    // Limpiar url
+    window.history.replaceState({}, '', '/admin/reportes');
+
     document.getElementById("btn-buscar")?.click(); // Buscar automáticamente tras limpiar
   });
 </script>
@@ -424,7 +505,7 @@ import Layout from "../../layouts/Layout.astro";
   }
   .form-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
     margin-bottom: 2.5rem;
   }

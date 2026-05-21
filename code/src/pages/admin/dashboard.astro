@@ -101,7 +101,7 @@ const modules = [
           <span class="stat-label">Entradas Hoy</span>
         </div>
       </div>
-      <div class="stat-card card-premium">
+      <a href="/admin/reportes?filtro=retardos" class="stat-card card-premium" style="text-decoration: none;">
         <div class="stat-icon" style="background: #F59E0B; color: white;">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
@@ -109,7 +109,7 @@ const modules = [
           <span class="stat-value" id="stat-retardos">0</span>
           <span class="stat-label">Retardos (Semana)</span>
         </div>
-      </div>
+      </a>
     </div>
 
     <div class="modules-grid">
@@ -233,7 +233,7 @@ const modules = [
 <style>
   .dashboard-container {
     width: 100%;
-    max-width: 1000px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 2rem 1.5rem;
     display: flex;
@@ -249,13 +249,13 @@ const modules = [
 
   @media (min-width: 1024px) {
     .dashboard-container {
-      max-width: 1100px;
+      max-width: 100%;
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 1fr 420px;
       grid-template-rows: auto auto 1fr;
       gap: 2rem;
       min-height: calc(100vh - 64px);
-      padding: 3rem 1.5rem;
+      padding: 3rem 8%;
       background: #f8fafc !important;
     }
 
@@ -312,6 +312,13 @@ const modules = [
     border: 1px solid #e2e8f0;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
     border-top: 2px solid #4a90e2;
+  }
+  a.stat-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  a.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
   }
   .stat-card:last-child {
     border-top-color: #f59e0b;
