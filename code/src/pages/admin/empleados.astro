@@ -557,7 +557,7 @@ import Layout from "../../layouts/Layout.astro";
 
   :global(.user-name) { font-weight: 700; color: #1e293b; }
   
-  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg), :global(.tag-cafe-valentina) { 
+  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg), :global(.tag-cafe-valentina), :global(.tag-prosime) { 
     padding: 4px 10px; 
     border-radius: 99px; 
     font-weight: 700; 
@@ -567,6 +567,7 @@ import Layout from "../../layouts/Layout.astro";
   :global(.tag-einsur) { color: #273469; background: #f1f5f9; }
   :global(.tag-scg) { color: #64748b; background: #f8fafc; }
   :global(.tag-cafe-valentina) { color: #854d0e; background: #fef9c3; }
+  :global(.tag-prosime) { color: #0284c7; background: #f0f9ff; }
 
   .company-tabs {
 
@@ -689,10 +690,11 @@ import Layout from "../../layouts/Layout.astro";
   .id-code { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569; }
   .badge-inactive { background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px; }
   
-  .tag-innova, .tag-einsur, .tag-cafe-valentina { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
+  .tag-innova, .tag-einsur, .tag-cafe-valentina, .tag-prosime { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
   .tag-innova { color: #4A90E2; background: #eff6ff; }
   .tag-einsur { color: #273469; background: #f1f5f9; }
   .tag-cafe-valentina { color: #854d0e; background: #fef9c3; }
+  .tag-prosime { color: #0284c7; background: #f0f9ff; }
 
   .actions-cell { display: flex; gap: 10px; justify-content: center; }
   .btn-action { 
@@ -748,7 +750,7 @@ import Layout from "../../layouts/Layout.astro";
     .btn-action { font-size: 0.65rem; padding: 4px 5px; width: 100%; }
     .content { padding: 0.5rem 0; width: 100% !important; }
     .actions-cell { flex-direction: column; width: 100%; }
-    .tag-innova, .tag-einsur { padding: 2px 6px; font-size: 0.65rem; }
+    .tag-innova, .tag-einsur, .tag-cafe-valentina, .tag-prosime { padding: 2px 6px; font-size: 0.65rem; }
   }
   /* --- MODALES (RESTAURADOS) --- */
   .modal { 
