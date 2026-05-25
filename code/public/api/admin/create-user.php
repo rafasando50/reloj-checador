@@ -9,12 +9,12 @@ $employee_id = $data['employee_id'] ?? '';
 $department = $data['department'] ?? '';
 $company = $data['company'] ?? '';
 $puesto = $data['puesto'] ?? 'Empleado';
-$tipo_horario = $data['tipo_horario'] ?? 'Tiempo Completo';
+$tipo_horario = $data['tipo_horario'] ?? 'Personalizado';
+$hora_entrada = $data['hora_entrada'] ?? '08:00:00';
 
-// Asignar hora de entrada según el turno
-$hora_entrada = '08:00:00';
-if ($tipo_horario === 'Practicante Vespertino') {
-    $hora_entrada = '13:00:00';
+// Normalizar formato de hora HH:MM a HH:MM:00
+if (strlen($hora_entrada) === 5) {
+    $hora_entrada .= ':00';
 }
 
 // VALIDAR DUPLICADOS

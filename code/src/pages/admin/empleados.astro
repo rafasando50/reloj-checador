@@ -129,12 +129,10 @@ import Layout from "../../layouts/Layout.astro";
     (document.getElementById("field-dept") as HTMLInputElement).value = user.department;
     (document.getElementById("field-puesto") as HTMLInputElement).value = user.puesto || "";
     
-    // Actualizar Custom Select de Horario
-    const horario = user.tipo_horario || "Tiempo Completo";
-    (document.getElementById("horario-hidden") as HTMLInputElement).value = horario;
-    (document.getElementById("selected-horario-label") as HTMLElement).innerText = horario === "Practicante Vespertino" ? "Practicante Vespertino (1:00 PM)" : (horario === "Practicante Matutino" ? "Practicante Matutino (8:00 AM)" : "Tiempo Completo (8:00 AM)");
-    document.querySelectorAll('#horario-options .option').forEach(o => o.classList.remove('selected'));
-    document.querySelector(`#horario-options .option[data-value="${horario}"]`)?.classList.add('selected');
+    // Actualizar Hora de Entrada
+    const hora = user.hora_entrada ? user.hora_entrada.substring(0, 5) : "08:00";
+    (document.getElementById("field-hora-entrada") as HTMLInputElement).value = hora;
+    (document.getElementById("horario-hidden") as HTMLInputElement).value = "Personalizado";
     
     const errCont = document.getElementById("modal-error-container");
     if (errCont) errCont.style.display = "none";
@@ -177,10 +175,8 @@ import Layout from "../../layouts/Layout.astro";
       if (errCont) errCont.style.display = "none";
       
       // Resetear Horario Custom Select
-      (document.getElementById("horario-hidden") as HTMLInputElement).value = "Tiempo Completo";
-      (document.getElementById("selected-horario-label") as HTMLElement).innerText = "Tiempo Completo (8:00 AM)";
-      document.querySelectorAll('#horario-options .option').forEach(o => o.classList.remove('selected'));
-      document.querySelector('#horario-options .option[data-value="Tiempo Completo"]')?.classList.add('selected');
+      (document.getElementById("horario-hidden") as HTMLInputElement).value = "Personalizado";
+      (document.getElementById("field-hora-entrada") as HTMLInputElement).value = "08:00";
 
       seleccionarEmpresa("Einsur"); // Resetear el selector al valor por defecto
       document.getElementById("modal-title").textContent = "Nuevo Empleado";
@@ -206,34 +202,6 @@ import Layout from "../../layouts/Layout.astro";
     window.addEventListener('click', () => {
       optionsMenu?.classList.remove('active');
       trigger?.classList.remove('active');
-      document.getElementById('horario-options')?.classList.remove('active');
-      document.getElementById('horario-trigger')?.classList.remove('active');
-    });
-
-    // --- Lógica del Custom Select (Horarios) ---
-    const hTrigger = document.getElementById('horario-trigger');
-    const hOptions = document.getElementById('horario-options');
-    
-    hTrigger?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      hOptions?.classList.toggle('active');
-      hTrigger?.classList.toggle('active');
-      // Cerrar el de empresas si está abierto
-      optionsMenu?.classList.remove('active');
-      trigger?.classList.remove('active');
-    });
-
-    document.querySelectorAll('#horario-options .option').forEach(opt => {
-      opt.addEventListener('click', () => {
-        const val = (opt as HTMLElement).dataset.value;
-        const text = (opt as HTMLElement).innerText;
-        (document.getElementById('horario-hidden') as HTMLInputElement).value = val;
-        (document.getElementById('selected-horario-label') as HTMLElement).innerText = text;
-        document.querySelectorAll('#horario-options .option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-        hOptions?.classList.remove('active');
-        hTrigger?.classList.remove('active');
-      });
     });
     
     // Formulario Usuario
@@ -390,18 +358,11 @@ import Layout from "../../layouts/Layout.astro";
             <input type="text" name="department" id="field-dept" placeholder="Departamento" />
           </div>
           <div class="input-container full-width">
-            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 8px; margin-left: 5px; text-transform: uppercase; letter-spacing: 0.5px;">TURNO / HORARIO</label>
-            <div class="custom-select-wrapper" style="font-family: 'Inter', sans-serif;">
-              <input type="hidden" name="tipo_horario" id="horario-hidden" value="Tiempo Completo" />
-              <div class="custom-select-trigger" id="horario-trigger" style="font-family: 'Inter', sans-serif;">
-                <span id="selected-horario-label">Tiempo Completo (8:00 AM)</span>
-                <svg class="arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </div>
-              <div class="custom-options" id="horario-options" style="font-family: 'Inter', sans-serif;">
-                <div class="option selected" data-value="Tiempo Completo">Tiempo Completo (8:00 AM)</div>
-                <div class="option" data-value="Practicante Matutino">Practicante Matutino (8:00 AM)</div>
-                <div class="option" data-value="Practicante Vespertino">Practicante Vespertino (1:00 PM)</div>
-              </div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 8px; margin-left: 5px; text-transform: uppercase; letter-spacing: 0.5px;">HORA DE ENTRADA</label>
+            <input type="hidden" name="tipo_horario" id="horario-hidden" value="Personalizado" />
+            <div style="position: relative; display: flex; align-items: center;">
+              <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 14px; color: #94a3b8; z-index: 10;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <input type="time" name="hora_entrada" id="field-hora-entrada" required style="width: 100%; padding: 12px 12px 12px 40px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; box-sizing: border-box; background: #f8fafc; transition: all 0.2s; font-family: 'Inter', sans-serif;" />
             </div>
           </div>
           <div class="input-container full-width">
