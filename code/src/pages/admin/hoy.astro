@@ -67,13 +67,21 @@ import Layout from "../../layouts/Layout.astro";
         </table>
       </div>
 
-      <div class="acciones-footer">
+      <div class="acciones-footer" style="gap: 1.5rem; flex-wrap: wrap;">
         <button
           onclick="window.location.reload()"
           class="btn-premium outline"
           style="min-width: 200px; height: 52px;"
         >
           Actualizar Todo
+        </button>
+        <button
+          id="btn-enviar-reporte"
+          class="btn-premium primary"
+          style="min-width: 240px; height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #273469 0%, #4a90e2 100%);"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          Enviar Reporte Diario
         </button>
       </div>
     </div>
@@ -210,6 +218,108 @@ import Layout from "../../layouts/Layout.astro";
     seleccionarEmpresa(""); // Resetear a "Todas"
     cargarHoy(); // Buscar automáticamente tras limpiar
   });
+
+  // Función para mostrar ventana emergente premium en la misma página
+  function mostrarMensaje({ titulo, mensaje, tipo = 'success' }) {
+    // Eliminar modal anterior si existe
+    document.getElementById("modal-custom-reporte")?.remove();
+    
+    // Iconos SVG de alta calidad para cada estado
+    let iconSvg = '';
+    if (tipo === 'success') {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+    } else if (tipo === 'info') {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+    } else {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
+    }
+    
+    const overlay = document.createElement("div");
+    overlay.id = "modal-custom-reporte";
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-icon ${tipo}">
+          ${iconSvg}
+        </div>
+        <h3 class="modal-title">${titulo}</h3>
+        <p class="modal-text">${mensaje}</p>
+        <button id="modal-cerrar-btn" class="btn-premium primary" style="width: 100%; height: 48px; min-width: 0; font-size: 0.95rem;">
+          Entendido
+        </button>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Forzar reflow para animación suave de entrada
+    setTimeout(() => overlay.classList.add("active"), 10);
+    
+    const cerrar = () => {
+      overlay.classList.remove("active");
+      setTimeout(() => overlay.remove(), 300);
+    };
+    
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) cerrar();
+    });
+    
+    document.getElementById("modal-cerrar-btn")?.addEventListener("click", cerrar);
+  }
+
+  // Lógica para enviar el reporte diario por correo (sin confirmación, con ventana emergente premium integrada)
+  document.getElementById("btn-enviar-reporte")?.addEventListener("click", async () => {
+    const btn = document.getElementById("btn-enviar-reporte") as HTMLButtonElement;
+    if (!btn) return;
+    
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    btn.style.cursor = "not-allowed";
+    btn.innerHTML = `
+      <svg class="animate-spin" style="animation: spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      Enviando Reporte...
+    `;
+    
+    try {
+      const res = await fetch("/api/cron_reports.php");
+      const data = await res.json();
+      
+      if (data.status === "success") {
+        if (data.email_sent) {
+          mostrarMensaje({
+            titulo: '¡Reporte Enviado!',
+            mensaje: `El reporte consolidado de incidencias (retardos/faltas) se ha enviado con éxito a la dirección:<br><strong style="color: #273469;">${data.recipient}</strong><br><br>Total reportado: <strong>${data.total_incidencias} incidencias hoy.</strong>`,
+            tipo: 'success'
+          });
+        } else {
+          mostrarMensaje({
+            titulo: 'Reporte Procesado',
+            mensaje: `El reporte diario se generó de manera exitosa, pero <strong>no se envió ningún correo</strong> debido a que hoy no se registraron incidencias (retardos o faltas) en el sistema.`,
+            tipo: 'info'
+          });
+        }
+      } else {
+        mostrarMensaje({
+          titulo: 'Error en Servidor',
+          mensaje: 'El servidor procesó la solicitud pero retornó un estado no exitoso. Por favor intente más tarde.',
+          tipo: 'error'
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      mostrarMensaje({
+        titulo: 'Error de Conexión',
+        mensaje: 'No fue posible conectarse con el servidor de reportes. Verifique su conexión de red.',
+        tipo: 'error'
+      });
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = "";
+      btn.style.cursor = "";
+      btn.innerHTML = textoOriginal;
+    }
+  });
 </script>
 
 <style>
@@ -282,6 +392,11 @@ import Layout from "../../layouts/Layout.astro";
   .btn-premium.primary { background: #4a90e2; color: white; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3); }
   .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
 
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
   .tabla-container { width: 100%; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; margin-bottom: 2.5rem; background: #f8fafc; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #f1f5f9; padding: 1.25rem; text-align: center; font-size: 0.75rem; font-weight: 800; color: #475569; }
@@ -351,5 +466,73 @@ import Layout from "../../layouts/Layout.astro";
     .titulo-principal { font-size: 1.6rem; margin-bottom: 1rem; }
     td { font-size: 0.8rem; }
     .btn-premium { height: 44px; font-size: 0.9rem; }
+  }
+
+  /* Custom Elegant Modal Styles */
+  :global(.modal-overlay) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+  }
+  :global(.modal-overlay.active) {
+    opacity: 1;
+  }
+  :global(.modal-card) {
+    background: white;
+    padding: 2.2rem;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.02);
+    text-align: center;
+    transform: scale(0.92);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  :global(.modal-overlay.active .modal-card) {
+    transform: scale(1);
+  }
+  :global(.modal-icon) {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ecfdf5;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem auto;
+  }
+  :global(.modal-icon.info) {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+  :global(.modal-icon.error) {
+    background: #fef2f2;
+    color: #ef4444;
+  }
+  :global(.modal-title) {
+    font-size: 1.4rem;
+    font-weight: 850;
+    color: #273469;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  :global(.modal-text) {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.55;
+    margin-top: 0;
+    margin-bottom: 1.8rem;
   }
 </style>

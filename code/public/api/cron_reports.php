@@ -43,7 +43,7 @@ foreach ($users as $empId => $user) {
             $incidencias[$company][] = [
                 'employee_id' => $empId,
                 'full_name' => $user['full_name'],
-                'tipo' => 'Falta (Retardo grave)',
+                'tipo' => 'Falta por retardo',
                 'hora_esperada' => substr($hora_esperada_str, 0, 5),
                 'hora_real' => date('H:i', $hora_entrada_real),
                 'minutos_tarde' => round($diff_minutos)
@@ -69,7 +69,7 @@ foreach ($users as $empId => $user) {
             $incidencias[$company][] = [
                 'employee_id' => $empId,
                 'full_name' => $user['full_name'],
-                'tipo' => 'Falta (No asistió / No ha checado)',
+                'tipo' => 'Falta',
                 'hora_esperada' => substr($hora_esperada_str, 0, 5),
                 'hora_real' => '--:--',
                 'minutos_tarde' => '--'
@@ -78,16 +78,16 @@ foreach ($users as $empId => $user) {
     }
 }
 
-// 4. Enviar correos por cada empresa
-$destinatario = "asistenciaeglobal@einsursupply.com.mx";
-$reportes_enviados = [];
-
+// 4. Enviar un único correo consolidado si hay incidencias
+$destinatario = "asistenciaegglobal@einsursupply.com";
+$total_incidencias = 0;
 foreach ($incidencias as $company => $lista) {
-    if (empty($lista)) {
-        continue;
-    }
+    $total_incidencias += count($lista);
+}
 
-    $subject = "[Reporte] Retardos y Faltas - " . $company . " (" . date("d/m/Y") . ")";
+$enviado = false;
+if ($total_incidencias > 0) {
+    $subject = "[Reporte General] Retardos y Faltas - " . date("d/m/Y");
     
     // Construir la plantilla HTML Premium
     $html = '
@@ -139,10 +139,21 @@ foreach ($incidencias as $company => $lista) {
                 margin-bottom: 20px;
                 color: #475569;
             }
+            .company-title {
+                font-size: 16px;
+                color: #273469;
+                margin-top: 25px;
+                margin-bottom: 10px;
+                font-weight: 700;
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
             table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
             }
             th {
                 background-color: #f8fafc;
@@ -188,13 +199,21 @@ foreach ($incidencias as $company => $lista) {
     <body>
         <div class="container">
             <div class="header">
-                <h1>Reporte de Incidencias</h1>
-                <p>' . htmlspecialchars($company) . ' &bull; ' . date("d/m/Y") . '</p>
+                <h1>Reporte General de Incidencias</h1>
+                <p>Consolidado &bull; ' . date("d/m/Y") . '</p>
             </div>
             <div class="content">
                 <p class="intro-text">
-                    A continuación se presenta la lista de empleados que registraron <strong>Retardo</strong> o <strong>Falta</strong> hoy:
-                </p>
+                    A continuación se presenta la lista consolidada de empleados que registraron <strong>Retardo</strong> o <strong>Falta</strong> hoy, agrupados por empresa:
+                </p>';
+                
+    foreach ($incidencias as $company => $lista) {
+        if (empty($lista)) {
+            continue;
+        }
+        
+        $html .= '
+                <h2 class="company-title">' . htmlspecialchars($company) . '</h2>
                 <table>
                     <thead>
                         <tr>
@@ -206,11 +225,11 @@ foreach ($incidencias as $company => $lista) {
                     </thead>
                     <tbody>';
                     
-    foreach ($lista as $item) {
-        $badgeClass = (strpos($item['tipo'], 'Retardo') !== false) ? 'badge-retardo' : 'badge-falta';
-        $minutosTardeText = ($item['minutos_tarde'] !== '--') ? ' (' . $item['minutos_tarde'] . ' min)' : '';
-        
-        $html .= '
+        foreach ($lista as $item) {
+            $badgeClass = (strpos($item['tipo'], 'Retardo') !== false) ? 'badge-retardo' : 'badge-falta';
+            $minutosTardeText = ($item['minutos_tarde'] !== '--') ? ' (' . $item['minutos_tarde'] . ' min)' : '';
+            
+            $html .= '
                         <tr>
                             <td>
                                 <strong>' . htmlspecialchars($item['full_name']) . '</strong><br>
@@ -222,11 +241,14 @@ foreach ($incidencias as $company => $lista) {
                                 <span class="badge ' . $badgeClass . '">' . htmlspecialchars($item['tipo']) . $minutosTardeText . '</span>
                             </td>
                         </tr>';
+        }
+        
+        $html .= '
+                    </tbody>
+                </table>';
     }
     
     $html .= '
-                    </tbody>
-                </table>
             </div>
             <div class="footer">
                 Este correo fue generado automáticamente por el Sistema Reloj Checador.<br>
@@ -244,21 +266,15 @@ foreach ($incidencias as $company => $lista) {
     
     // Enviar correo nativo
     $enviado = mail($destinatario, $encoded_subject, $html, $headers);
-    
-    $reportes_enviados[] = [
-        'company' => $company,
-        'sent' => $enviado,
-        'recipient' => $destinatario,
-        'count' => count($lista),
-        'employees' => $lista
-    ];
 }
 
 // 5. Retornar JSON
 echo json_encode([
     'status' => 'success',
     'date' => date('Y-m-d H:i:s'),
-    'reports_processed' => count($reportes_enviados),
-    'details' => $reportes_enviados
+    'total_incidencias' => $total_incidencias,
+    'email_sent' => $enviado,
+    'recipient' => $destinatario,
+    'details' => $incidencias
 ]);
 ?>

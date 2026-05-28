@@ -101,9 +101,14 @@ const isLoginPage = currentPath === "/" ||
   }
 
   .btn-premium.primary {
-    background: #4A90E2;
+    background: linear-gradient(135deg, #273469 0%, #4a90e2 100%) !important;
     color: white;
     box-shadow: 0 8px 20px -4px rgba(74, 144, 226, 0.4);
+  }
+
+  .btn-premium.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -4px rgba(39, 52, 105, 0.4);
   }
 
   .btn-premium.outline {

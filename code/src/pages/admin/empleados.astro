@@ -765,7 +765,15 @@ import Layout from "../../layouts/Layout.astro";
     gap: 10px;
     transition: all 0.2s;
   }
-  .btn-premium.primary { background: #4a90e2; color: white; box-shadow: 0 4px 14px rgba(74, 144, 226, 0.4); }
+  .btn-premium.primary {
+    background: linear-gradient(135deg, #273469 0%, #4a90e2 100%) !important;
+    color: white;
+    box-shadow: 0 8px 20px -4px rgba(74, 144, 226, 0.4);
+  }
+  .btn-premium.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -4px rgba(39, 52, 105, 0.4);
+  }
   .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
   .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); }
 

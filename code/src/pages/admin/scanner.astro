@@ -253,9 +253,13 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .btn-premium.primary {
-    background: #4a90e2;
+    background: linear-gradient(135deg, #273469 0%, #4a90e2 100%) !important;
     color: white;
     box-shadow: 0 8px 20px -4px rgba(74, 144, 226, 0.4);
+  }
+  .btn-premium.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -4px rgba(39, 52, 105, 0.4);
   }
 
   .btn-premium.outline {
@@ -289,10 +293,10 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .radio-btn input:checked + .radio-texto {
-    background: var(--primary) !important;
+    background: linear-gradient(135deg, #273469 0%, #4a90e2 100%) !important;
     color: white !important;
-    border-color: var(--primary) !important;
-    box-shadow: 0 4px 14px 0 rgba(74, 144, 226, 0.45);
+    border: none !important;
+    box-shadow: 0 8px 20px -4px rgba(74, 144, 226, 0.4) !important;
   }
   .radio-btn input:not(:checked) + .radio-texto {
     background: white !important;
@@ -430,12 +434,20 @@ import Layout from "../../layouts/Layout.astro";
     display: none !important;
   }
   :global(#reader__dashboard_section_csr button) {
-    background: #4a90e2 !important;
+    background: linear-gradient(135deg, #273469 0%, #4a90e2 100%) !important;
     color: white !important;
     border: none !important;
-    padding: 8px 16px !important;
-    border-radius: 8px !important;
-    font-weight: 700 !important;
+    padding: 10px 20px !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2) !important;
+  }
+  :global(#reader__dashboard_section_csr button:hover) {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 18px rgba(39, 52, 105, 0.3) !important;
   }
 
   /* Ajustes para Móvil */
