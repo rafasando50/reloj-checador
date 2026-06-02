@@ -3,9 +3,32 @@ import Layout from "../../layouts/Layout.astro";
 ---
 
 <script>
-  // Verificar sesión admin en el cliente
-  if (!document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='))) {
+  // Verificar si viene el token de acceso público en la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const publicToken = urlParams.get('token');
+  const EXPECTED_TOKEN = "einsur_kiosco_2026";
+
+  if (publicToken === EXPECTED_TOKEN) {
+    localStorage.setItem('scanner_public_access', 'true');
+  }
+
+  const hasAdminSession = document.cookie.split(';').some((item) => item.trim().startsWith('admin_session='));
+  const hasPublicAccess = localStorage.getItem('scanner_public_access') === 'true';
+
+  // Si no tiene sesión activa ni acceso público guardado, redirige a login
+  if (!hasAdminSession && !hasPublicAccess) {
     window.location.replace("/admin/login");
+  }
+
+  // Si es acceso público (sin sesión admin), ocultamos la navbar
+  if (!hasAdminSession && hasPublicAccess) {
+    document.addEventListener("DOMContentLoaded", () => {
+      const navbar = document.querySelector('.navbar');
+      if (navbar) {
+        (navbar as HTMLElement).style.display = 'none';
+      }
+      document.body.style.paddingTop = '0px';
+    });
   }
 </script>
 

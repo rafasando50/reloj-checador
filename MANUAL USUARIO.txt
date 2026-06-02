@@ -1,0 +1,8 @@
+LOGIN USUARIO:
+https://egaccess.einsursupply.com/
+
+LOGIN ADMIN: 
+https://egaccess.einsursupply.com/admin/login
+
+LINK ESCANER DIRECTO:
+https://egaccess.einsursupply.com/admin/scanner?token=einsur_kiosco_2026
