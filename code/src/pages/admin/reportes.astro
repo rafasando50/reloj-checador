@@ -568,7 +568,8 @@ import Layout from "../../layouts/Layout.astro";
     position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: white; 
     border: 2px solid #e2e8f0; border-radius: 12px; z-index: 100; display: none; 
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    max-height: 180px;
+    overflow-y: auto;
   }
   :global(.custom-options.active) { display: block; }
   :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: #475569; text-align: left; }
@@ -662,6 +663,7 @@ import Layout from "../../layouts/Layout.astro";
     gap: 10px;
     transition: all 0.2s;
     font-family: 'Inter', sans-serif;
+  }
   .btn-premium.primary {
     background: linear-gradient(135deg, #273469 0%, #4a90e2 100%) !important;
     color: white;
@@ -674,11 +676,17 @@ import Layout from "../../layouts/Layout.astro";
   .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
 
   /* Responsive Design */
+  @media (max-width: 1024px) {
+    .form-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  }
+
   @media (max-width: 768px) {
     .contenedor-principal { padding: 2rem 1.25rem; }
     .reports-card { padding: 2rem !important; }
     .titulo-principal { font-size: 2.5rem; margin-bottom: 2.5rem; }
     .form-grid { grid-template-columns: repeat(2, 1fr); }
+    .btn-action { min-width: 140px; height: 48px; font-size: 0.9rem; }
+    .botones-filtros { gap: 1rem; }
   }
 
   @media (max-width: 425px) {

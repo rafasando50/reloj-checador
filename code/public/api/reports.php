@@ -11,7 +11,7 @@ if (!$start || !$end) {
     $end = date('Y-m-d');
 }
 
-$query = "SELECT r.id, r.empleado_id, r.hora_entrada AS entrada, r.hora_salida AS salida, u.full_name, r.entrada_estacion, r.salida_estacion, u.hora_entrada AS hora_esperada 
+$query = "SELECT r.id, r.empleado_id, r.hora_entrada AS entrada, r.hora_salida AS salida, u.full_name, u.company, r.entrada_estacion, r.salida_estacion, u.hora_entrada AS hora_esperada 
           FROM registros r 
           LEFT JOIN users u ON r.empleado_id = u.employee_id 
           WHERE r.hora_entrada >= ? AND r.hora_entrada <= ?";
@@ -43,7 +43,28 @@ $result = $stmt->get_result();
 $data = [];
 while ($row = $result->fetch_assoc()) {
     $puntualidad = 'A Tiempo';
-    if ($row['entrada']) {
+    $companyLower = strtolower(trim($row['company'] ?? ''));
+    if ($companyLower === 'la casita') {
+        if ($row['entrada']) {
+            if ($row['salida']) {
+                $horas_trabajadas = (strtotime($row['salida']) - strtotime($row['entrada'])) / 3600;
+                if ($horas_trabajadas < 7.75) {
+                    if ($horas_trabajadas < 7.0) {
+                        $puntualidad = 'Falta';
+                    } else {
+                        $puntualidad = 'Retardo';
+                    }
+                }
+            } else {
+                $dia_entrada = date('Y-m-d', strtotime($row['entrada']));
+                if ($dia_entrada === date('Y-m-d')) {
+                    $puntualidad = 'A Tiempo';
+                } else {
+                    $puntualidad = 'Falta';
+                }
+            }
+        }
+    } else if ($row['entrada']) {
         $hora_entrada_real = strtotime($row['entrada']);
         $hora_esperada_str = $row['hora_esperada'] ?? '08:00:00';
         $hora_esperada_ts = strtotime(date('Y-m-d ', $hora_entrada_real) . $hora_esperada_str);

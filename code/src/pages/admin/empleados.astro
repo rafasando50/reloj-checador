@@ -12,6 +12,7 @@ import Layout from "../../layouts/Layout.astro";
   async function cargarDatos(forceReloadCompanies = false) {
     const showInactive = (document.getElementById("check-inactive") as HTMLInputElement)?.checked;
     const company = document.querySelector(".tab-btn.active")?.getAttribute("data-company") || "all";
+    const search = (document.getElementById("employee-search") as HTMLInputElement)?.value || "";
     
     try {
       // Cargar Empresas si es la primera vez o si se fuerza la recarga
@@ -55,7 +56,7 @@ import Layout from "../../layouts/Layout.astro";
       }
 
       // Cargar Usuarios
-      const resUsers = await fetch(`/api/admin/users.php?showInactive=${showInactive}&company=${company}`);
+      const resUsers = await fetch(`/api/admin/users.php?showInactive=${showInactive}&company=${company}&search=${encodeURIComponent(search)}`);
       const users = await resUsers.json();
       const rowsContainer = document.getElementById("employee-rows");
       if (rowsContainer) {
@@ -159,6 +160,7 @@ import Layout from "../../layouts/Layout.astro";
     
     // Configurar eventos de modales y filtros
     document.getElementById("check-inactive")?.addEventListener("change", cargarDatos);
+    document.getElementById("employee-search")?.addEventListener("input", () => cargarDatos());
     
     // Evento para el tab estático "Todos"
     const btnTodos = document.querySelector('.tab-btn[data-company="all"]');
@@ -281,6 +283,17 @@ import Layout from "../../layouts/Layout.astro";
           <div class="company-tabs">
             <button class="tab-btn active" data-company="all">Todos</button>
             {/* Las empresas se cargarán dinámicamente */}
+          </div>
+
+          <div class="search-box-container" style="position: relative; width: 260px; max-width: 100%;">
+            <input
+              type="text"
+              id="employee-search"
+              placeholder="Buscar empleado..."
+              class="input-premium-search"
+              style="width: 100%; padding: 10px 14px 10px 40px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; background: #f8fafc; font-family: 'Inter', sans-serif; box-sizing: border-box;"
+            />
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           </div>
 
           <label class="toggle-inactive">
@@ -518,7 +531,7 @@ import Layout from "../../layouts/Layout.astro";
 
   :global(.user-name) { font-weight: 700; color: #1e293b; }
   
-  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg), :global(.tag-cafe-valentina), :global(.tag-prosime) { 
+  :global(.tag-innova), :global(.tag-einsur), :global(.tag-scg), :global(.tag-cafe-valentina), :global(.tag-prosime), :global(.tag-la-casita) { 
     padding: 4px 10px; 
     border-radius: 99px; 
     font-weight: 700; 
@@ -529,6 +542,7 @@ import Layout from "../../layouts/Layout.astro";
   :global(.tag-scg) { color: #64748b; background: #f8fafc; }
   :global(.tag-cafe-valentina) { color: #854d0e; background: #fef9c3; }
   :global(.tag-prosime) { color: #0284c7; background: #f0f9ff; }
+  :global(.tag-la-casita) { color: #15803d; background: #dcfce7; }
 
   .company-tabs {
 
@@ -557,6 +571,16 @@ import Layout from "../../layouts/Layout.astro";
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
+  .input-premium-search {
+    transition: all 0.2s ease-in-out;
+  }
+  .input-premium-search:focus {
+    border-color: #4a90e2 !important;
+    background: white !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  }
+
   .toggle-inactive { display: flex; align-items: center; gap: 10px; cursor: pointer; color: #64748b; font-weight: 600; font-size: 0.85rem; }
   .toggle-inactive input { display: none; }
   .switch { width: 40px; height: 22px; background: #cbd5e1; border-radius: 20px; position: relative; transition: 0.3s; }
@@ -565,7 +589,7 @@ import Layout from "../../layouts/Layout.astro";
   .toggle-inactive input:checked + .switch::after { left: 21px; }
 
   /* --- DASHBOARD LAYOUT --- */
-  .content { padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .content { padding: 2rem; max-width: 98%; margin: 0 auto; width: 100%; box-sizing: border-box; }
   .management-card { 
     background: white; 
     border-radius: 30px; 
@@ -583,8 +607,9 @@ import Layout from "../../layouts/Layout.astro";
     border-radius: 20px;
     margin-bottom: 2.5rem;
     gap: 1.5rem;
+    flex-wrap: wrap;
   }
-  .left-filters { display: flex; align-items: center; gap: 2rem; }
+  .left-filters { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
   
   .company-tabs { 
     display: flex; 
@@ -651,11 +676,12 @@ import Layout from "../../layouts/Layout.astro";
   .id-code { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569; }
   .badge-inactive { background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px; }
   
-  .tag-innova, .tag-einsur, .tag-cafe-valentina, .tag-prosime { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
+  .tag-innova, .tag-einsur, .tag-cafe-valentina, .tag-prosime, .tag-la-casita { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
   .tag-innova { color: #4A90E2; background: #eff6ff; }
   .tag-einsur { color: #273469; background: #f1f5f9; }
   .tag-cafe-valentina { color: #854d0e; background: #fef9c3; }
   .tag-prosime { color: #0284c7; background: #f0f9ff; }
+  .tag-la-casita { color: #15803d; background: #dcfce7; }
 
   .actions-cell { display: flex; gap: 10px; justify-content: center; }
   .btn-action { 
@@ -676,10 +702,24 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   @media (max-width: 768px) {
-    .filters-bar { flex-direction: column; padding: 1.5rem; }
-    .left-filters { flex-direction: column; width: 100%; gap: 1rem; }
-    .company-tabs { width: 100%; overflow-x: auto; }
-    .tab-btn { flex: 1; padding: 10px; }
+    .filters-bar { flex-direction: column; padding: 1.25rem; gap: 1.25rem; }
+    .left-filters { flex-direction: column; width: 100%; gap: 1rem; align-items: stretch; }
+    .company-tabs { 
+      width: 100%; 
+      display: flex;
+      flex-wrap: nowrap !important;
+      overflow-x: auto; 
+      white-space: nowrap;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
+    }
+    .company-tabs::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 0 0 auto; padding: 10px 16px; }
+    .search-box-container { width: 100% !important; }
+    .action-buttons { width: 100%; display: flex; gap: 0.75rem; }
+    .btn-main-action { flex: 1; min-width: 0 !important; height: 44px; font-size: 0.9rem; }
+    
     .employee-header, .employee-row { 
       grid-template-columns: 1fr 100px 120px !important; 
       padding: 1.25rem 1rem;
@@ -689,13 +729,16 @@ import Layout from "../../layouts/Layout.astro";
     .btn-action { width: 100%; padding: 5px; font-size: 0.75rem; }
   }
 
+  @media (max-width: 480px) {
+    .management-card { padding: 1.2rem !important; border-radius: 20px; }
+    .gradient-text { font-size: 2rem; text-align: center; }
+    .filters-bar { padding: 1rem; border-radius: 14px; }
+  }
+
   @media (max-width: 375px) {
     .gradient-text { font-size: 1.8rem; }
-    .company-tabs { flex-wrap: wrap; }
-    .tab-btn { font-size: 0.75rem; padding: 8px 10px; }
-    .actions-cell { flex-direction: column; gap: 5px; }
-    .btn-action { width: 100%; justify-content: center; }
-    .btn-main-action { height: 40px !important; font-size: 0.85rem !important; min-width: 0 !important; flex: 1; }
+    .tab-btn { font-size: 0.8rem; padding: 8px 12px; }
+    .btn-main-action { height: 40px !important; font-size: 0.8rem !important; }
   }
 
   @media (max-width: 320px) {
@@ -730,7 +773,7 @@ import Layout from "../../layouts/Layout.astro";
     width: 100%; 
     max-width: 580px; 
     border-radius: 24px;
-    overflow: hidden;
+    overflow: visible;
     padding: 2.5rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
@@ -795,7 +838,8 @@ import Layout from "../../layouts/Layout.astro";
     position: absolute; top: 100%; left: 0; right: 0; background: white; 
     border: 2px solid #e2e8f0; border-radius: 12px; margin-top: 4px; z-index: 100; display: none; 
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    max-height: 180px;
+    overflow-y: auto;
   }
   :global(.custom-options.active) { display: block; }
   :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; }

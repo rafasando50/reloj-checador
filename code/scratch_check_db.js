@@ -1,15 +1,20 @@
 import pool from './src/lib/db.js';
 
-async function checkTables() {
+async function checkSchema() {
   try {
-    const [rows] = await pool.execute('SHOW TABLES');
-    console.log('Tablas en la base de datos:');
-    console.log(rows);
+    const [usersCols] = await pool.execute('DESCRIBE users');
+    console.log('--- COLUMNS IN users ---');
+    console.log(usersCols);
+
+    const [companiesCols] = await pool.execute('DESCRIBE companies');
+    console.log('--- COLUMNS IN companies ---');
+    console.log(companiesCols);
+
     process.exit(0);
   } catch (error) {
-    console.error('Error al conectar:', error);
+    console.error('Error:', error);
     process.exit(1);
   }
 }
 
-checkTables();
+checkSchema();

@@ -27,6 +27,12 @@ foreach ($users as $empId => $user) {
         $company = 'Sin Empresa';
     }
 
+    $companyLower = strtolower($company);
+    if ($companyLower === 'la casita') {
+        // Ignorar incidencias para empresas con horarios flexibles/rotativos
+        continue;
+    }
+
     $hora_esperada_str = $user['hora_entrada'] ?: '08:00:00';
     
     if (isset($registros[$empId])) {

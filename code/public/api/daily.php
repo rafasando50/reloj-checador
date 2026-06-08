@@ -37,7 +37,28 @@ $result = $stmt->get_result();
 $data = [];
 while ($row = $result->fetch_assoc()) {
     $puntualidad = 'A Tiempo';
-    if ($row['entrada']) {
+    $companyLower = strtolower(trim($row['company'] ?? ''));
+    if ($companyLower === 'la casita') {
+        if ($row['entrada']) {
+            if ($row['salida']) {
+                $horas_trabajadas = (strtotime($row['salida']) - strtotime($row['entrada'])) / 3600;
+                if ($horas_trabajadas < 7.75) {
+                    if ($horas_trabajadas < 7.0) {
+                        $puntualidad = 'Falta';
+                    } else {
+                        $puntualidad = 'Retardo';
+                    }
+                }
+            } else {
+                $dia_entrada = date('Y-m-d', strtotime($row['entrada']));
+                if ($dia_entrada === date('Y-m-d')) {
+                    $puntualidad = 'A Tiempo';
+                } else {
+                    $puntualidad = 'Falta';
+                }
+            }
+        }
+    } else if ($row['entrada']) {
         $hora_entrada_real = strtotime($row['entrada']);
         $hora_esperada_str = $row['hora_esperada'] ?? '08:00:00';
         $hora_esperada_ts = strtotime(date('Y-m-d ', $hora_entrada_real) . $hora_esperada_str);
@@ -54,17 +75,27 @@ while ($row = $result->fetch_assoc()) {
 
 if (isset($_GET['mode']) && $_GET['mode'] === 'dashboard') {
     // Calcular retardos de la semana
-    $week_q = "SELECT r.hora_entrada, u.hora_entrada AS hora_esperada 
+    $week_q = "SELECT r.hora_entrada, r.hora_salida, u.hora_entrada AS hora_esperada, u.company 
                FROM registros r 
                JOIN users u ON r.empleado_id = u.employee_id 
                WHERE r.hora_entrada >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
     $week_res = $conn->query($week_q);
     $week_delays = 0;
     while($row_w = $week_res->fetch_assoc()) {
-        $real_w = strtotime($row_w['hora_entrada']);
-        $esp_w = $row_w['hora_esperada'] ?? '08:00:00';
-        $esp_ts_w = strtotime(date('Y-m-d ', $real_w) . $esp_w);
-        if (($real_w - $esp_ts_w) / 60 > 6) $week_delays++;
+        $companyLower = strtolower(trim($row_w['company'] ?? ''));
+        if ($companyLower === 'la casita') {
+            if ($row_w['hora_salida']) {
+                $horas_trabajadas = (strtotime($row_w['hora_salida']) - strtotime($row_w['hora_entrada'])) / 3600;
+                if ($horas_trabajadas < 7.75 && $horas_trabajadas >= 7.0) {
+                    $week_delays++;
+                }
+            }
+        } else {
+            $real_w = strtotime($row_w['hora_entrada']);
+            $esp_w = $row_w['hora_esperada'] ?? '08:00:00';
+            $esp_ts_w = strtotime(date('Y-m-d ', $real_w) . $esp_w);
+            if (($real_w - $esp_ts_w) / 60 > 6) $week_delays++;
+        }
     }
 
     echo json_encode([
