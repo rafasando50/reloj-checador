@@ -158,8 +158,9 @@ import Layout from "../layouts/Layout.astro";
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f9;
+    background: var(--bg-primary);
     padding: 2rem;
+    transition: background-color 0.3s ease;
   }
 
   .login-wrapper {
@@ -169,8 +170,10 @@ import Layout from "../layouts/Layout.astro";
     max-width: 1000px;
     width: 100%;
     justify-content: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
     overflow: hidden;
+    border-radius: 24px;
   }
 
   /* Photo Panel Styling */
@@ -193,7 +196,6 @@ import Layout from "../layouts/Layout.astro";
     object-fit: cover;
     filter: brightness(0.85);
   }
-
   .photo-overlay {
     position: absolute;
     bottom: 0;
@@ -223,31 +225,33 @@ import Layout from "../layouts/Layout.astro";
     max-width: 500px;
     text-align: center;
     padding: 4rem !important;
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 0;
     box-shadow: none;
     box-sizing: border-box; /* Crucial para que el padding no estire la tarjeta */
+    transition: background-color 0.3s ease;
   }
 
   .logo-circle {
     margin: 0 auto 1.5rem auto;
     width: 64px;
     height: 64px;
-    background: #eff6ff;
-    border-radius: 20px;
+    background: var(--bg-primary);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #4a90e2;
+    color: var(--primary);
+    border: 2px solid var(--border-color);
   }
   .main-title {
     font-size: 2.5rem;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
     margin-bottom: 0.5rem;
   }
   .subtitle {
-    color: #64748b;
+    color: var(--text-muted);
     margin-bottom: 2.5rem;
     font-weight: 500;
   }
@@ -266,18 +270,21 @@ import Layout from "../layouts/Layout.astro";
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8;
+    color: var(--text-muted);
   }
   input {
     width: 100%;
     padding: 14px 16px 14px 48px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-main);
     border-radius: 12px;
     font-size: 1rem;
     box-sizing: border-box;
+    transition: all 0.2s;
   }
   input:focus {
-    border-color: #4a90e2;
+    border-color: var(--primary);
     outline: none;
   }
 

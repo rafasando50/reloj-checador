@@ -5,7 +5,8 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
 <nav class="navbar">
   <div class="nav-container">
     <a href={logoLink} class="nav-logo" id="nav-logo-link">
-      <img src="/logonavbar.png" alt="Logo" class="navbar-logo-img" />
+      <img src="/logonavbar.png" alt="Logo" class="navbar-logo-img logo-light" />
+      <img src="/logonavbar_dark.png" alt="Logo" class="navbar-logo-img logo-dark" />
     </a>
 
     <div class="nav-welcome-text">
@@ -13,6 +14,17 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
     </div>
 
     <div class="nav-links">
+      {/* Botón de Modo Oscuro */}
+      <button id="theme-toggle" class="btn-theme-toggle" aria-label="Cambiar tema">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+      </button>
+
       {/* Botón Dashboard (Oculto por defecto) */}
       <a
         href="/admin/dashboard"
@@ -130,8 +142,8 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
 
 <style>
   .navbar {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
     padding: 0.3rem 0;
     position: fixed;
     top: 0;
@@ -140,6 +152,7 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
     width: auto !important;
     z-index: 1000;
     margin: 0 !important;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .nav-container {
@@ -161,13 +174,22 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
     width: auto;
     object-fit: contain;
   }
+  .logo-dark {
+    display: none !important;
+  }
+  html[data-theme="dark"] .logo-light {
+    display: none !important;
+  }
+  html[data-theme="dark"] .logo-dark {
+    display: block !important;
+  }
 
   .nav-welcome-text {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     font-size: 1.1rem;
-    color: #273469;
+    color: var(--title-dark);
     font-weight: 800;
     pointer-events: none;
     white-space: nowrap;
@@ -183,7 +205,7 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
   .nav-links a,
   .btn-logout {
     text-decoration: none;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 600;
     font-size: 0.9rem;
     padding: 8px 16px;
@@ -198,13 +220,30 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
     font-family: "Inter", sans-serif;
   }
 
+  .btn-theme-toggle {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .btn-theme-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+  }
+
   .nav-links a:hover:not(.active) {
-    background: #f8fafc;
-    color: #1e293b;
+    background: var(--bg-tertiary);
+    color: var(--text-main);
   }
   .nav-links a.active {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--bg-primary);
+    color: var(--primary);
   }
   .btn-logout {
     color: #ef4444 !important;
@@ -217,6 +256,11 @@ const logoLink = "/"; // Por defecto al inicio, JS lo cambiará si es admin
   .dashboard-link {
     color: #4a90e2 !important;
     background: #f0f7ff;
+  }
+  
+  html[data-theme="dark"] .dashboard-link {
+    color: #93c5fd !important;
+    background: #1e3a8a !important;
   }
 
   @media (max-width: 1024px) {

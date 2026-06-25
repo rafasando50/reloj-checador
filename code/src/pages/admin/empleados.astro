@@ -572,11 +572,14 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .input-premium-search {
+    background: var(--bg-primary) !important;
+    border: 2px solid var(--border-color) !important;
+    color: var(--text-main) !important;
     transition: all 0.2s ease-in-out;
   }
   .input-premium-search:focus {
-    border-color: #4a90e2 !important;
-    background: white !important;
+    border-color: var(--primary) !important;
+    background: var(--bg-secondary) !important;
     outline: none;
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
   }
@@ -591,29 +594,30 @@ import Layout from "../../layouts/Layout.astro";
   /* --- DASHBOARD LAYOUT --- */
   .content { padding: 2rem; max-width: 98%; margin: 0 auto; width: 100%; box-sizing: border-box; }
   .management-card { 
-    background: white; 
+    background: var(--bg-secondary); 
     border-radius: 30px; 
     padding: 2.5rem !important; 
-    box-shadow: 0 20px 50px rgba(0,0,0,0.05);
-    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
   }
 
   .filters-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #f8fafc;
+    background: var(--bg-tertiary);
     padding: 1.25rem 2rem;
     border-radius: 20px;
     margin-bottom: 2.5rem;
     gap: 1.5rem;
     flex-wrap: wrap;
+    border: 1px solid var(--border-color);
   }
   .left-filters { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
   
   .company-tabs { 
     display: flex; 
-    background: #e2e8f0; 
+    background: var(--bg-primary); 
     padding: 5px; 
     border-radius: 14px; 
     gap: 2px;
@@ -624,18 +628,18 @@ import Layout from "../../layouts/Layout.astro";
     background: none;
     border-radius: 10px;
     font-weight: 700;
-    color: #64748b;
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s;
     font-size: 0.9rem;
   }
-  .tab-btn.active { background: white; color: #4a90e2; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+  .tab-btn.active { background: var(--bg-secondary); color: var(--primary); box-shadow: var(--shadow-sm); }
 
   /* --- NUEVA ESTRUCTURA GRID (SOLUCIÓN MATEMÁTICA) --- */
   .employee-list-container {
     width: 100%;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
     overflow-x: auto; /* Permite deslizar hacia los lados */
     margin-top: 1rem;
@@ -652,28 +656,28 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .employee-header {
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
     font-size: 0.75rem;
     font-weight: 800;
-    color: #64748b;
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .employee-row {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
     transition: all 0.2s;
   }
-  .employee-row:hover { background: #f8fafc; transform: translateX(5px); }
-  .employee-row.row-inactive { opacity: 0.6; background: #fcfcfc; }
+  .employee-row:hover { background: var(--bg-primary); transform: translateX(5px); }
+  .employee-row.row-inactive { opacity: 0.6; background: var(--bg-primary); }
 
   .col-name { text-align: left; }
   .col-id, .col-company, .col-actions { text-align: center; }
   .col-dept { text-align: left; }
 
-  .user-name { font-weight: 700; color: #1e293b; font-size: 1rem; }
-  .id-code { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #475569; }
+  .user-name { font-weight: 700; color: var(--text-main); font-size: 1rem; }
+  .id-code { background: var(--bg-primary); padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: var(--text-muted); }
   .badge-inactive { background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px; }
   
   .tag-innova, .tag-einsur, .tag-cafe-valentina, .tag-prosime, .tag-la-casita { padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
@@ -685,14 +689,14 @@ import Layout from "../../layouts/Layout.astro";
 
   .actions-cell { display: flex; gap: 10px; justify-content: center; }
   .btn-action { 
-    background: white; border: 1px solid; padding: 7px 14px; border-radius: 10px; 
-    font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+    background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 7px 14px; border-radius: 10px; 
+    font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; color: var(--text-muted);
   }
-  .btn-action.edit { border-color: #e2e8f0; color: #3b82f6; }
-  .btn-action.edit:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
-  .btn-action.deactivate { border-color: #fee2e2; color: #ef4444; }
+  .btn-action.edit { border-color: var(--border-color); color: var(--primary); }
+  .btn-action.edit:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .btn-action.deactivate { border-color: var(--border-color); color: #ef4444; }
   .btn-action.deactivate:hover { background: #ef4444; color: white; border-color: #ef4444; }
-  .btn-action.reactivate { border-color: #dcfce7; color: #22c55e; }
+  .btn-action.reactivate { border-color: var(--border-color); color: #22c55e; }
   .btn-action.reactivate:hover { background: #22c55e; color: white; border-color: #22c55e; }
 
   /* RESPONSIVE */
@@ -769,13 +773,15 @@ import Layout from "../../layouts/Layout.astro";
   }
   .modal.active { display: flex; }
   .modal-content { 
-    background: white; 
+    background: var(--bg-secondary); 
     width: 100%; 
     max-width: 580px; 
     border-radius: 24px;
     overflow: visible;
     padding: 2.5rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
   }
 
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
@@ -784,15 +790,16 @@ import Layout from "../../layouts/Layout.astro";
   .input-container input { 
     width: 100%; 
     padding: 12px 12px 12px 40px; 
-    border: 2px solid #e2e8f0; 
+    border: 2px solid var(--border-color); 
     border-radius: 12px;
     font-size: 1rem; 
     box-sizing: border-box; 
-    background: #f8fafc;
+    background: var(--bg-primary);
+    color: var(--text-main);
     transition: all 0.2s;
   }
-  .input-container input:focus { border-color: #4a90e2; outline: none; background: white; }
-  .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+  .input-container input:focus { border-color: var(--primary); outline: none; background: var(--bg-secondary); }
+  .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
 
   .form-actions { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1rem; }
   .btn-premium {
@@ -817,31 +824,40 @@ import Layout from "../../layouts/Layout.astro";
     transform: translateY(-2px);
     box-shadow: 0 12px 24px -4px rgba(39, 52, 105, 0.4);
   }
-  .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
-  .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); }
+  .btn-premium.outline { 
+    background: var(--bg-secondary); 
+    color: var(--text-muted); 
+    border: 2px solid var(--border-color); 
+  }
+  .btn-premium.outline:hover {
+    background: var(--bg-primary);
+    color: var(--text-main);
+  }
+  .btn-premium:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
   /* Custom Select en Modales */
   :global(.custom-select-wrapper) { position: relative; width: 100%; }
   :global(.custom-select-trigger) { 
     padding: 12px 16px; 
-    border: 2px solid #e2e8f0; 
+    border: 2px solid var(--border-color); 
     border-radius: 12px;
-    background: #f8fafc; 
+    background: var(--bg-primary); 
+    color: var(--text-main);
     cursor: pointer; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
     font-weight: 500; 
   }
-  :global(.custom-select-trigger.active) { border-color: #4a90e2; background: white; }
+  :global(.custom-select-trigger.active) { border-color: var(--primary); background: var(--bg-secondary); }
   :global(.custom-options) { 
-    position: absolute; top: 100%; left: 0; right: 0; background: white; 
-    border: 2px solid #e2e8f0; border-radius: 12px; margin-top: 4px; z-index: 100; display: none; 
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); 
+    border: 2px solid var(--border-color); border-radius: 12px; margin-top: 4px; z-index: 100; display: none; 
+    box-shadow: var(--shadow-md);
     max-height: 180px;
     overflow-y: auto;
   }
   :global(.custom-options.active) { display: block; }
-  :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; }
-  :global(.option:hover) { background: #f1f5f9; color: #4a90e2; }
+  :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: var(--text-main); }
+  :global(.option:hover) { background: var(--bg-primary); color: var(--primary); }
 </style>

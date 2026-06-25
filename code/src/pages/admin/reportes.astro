@@ -520,25 +520,25 @@ import Layout from "../../layouts/Layout.astro";
   .input-group label {
     font-size: 0.85rem;
     font-weight: 800;
-    color: #273469;
+    color: var(--title-dark);
     text-align: left;
     width: 100%;
   }
   .input-premium {
     width: 100%;
     padding: 12px 14px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border-color);
     border-radius: 12px;
     font-size: 0.95rem;
-    color: #1e293b;
-    background: #f8fafc;
+    color: var(--text-main);
+    background: var(--bg-primary);
     transition: all 0.2s;
     box-sizing: border-box;
     font-family: 'Inter', sans-serif;
   }
   .input-premium:focus {
-    border-color: #4a90e2;
-    background: white;
+    border-color: var(--primary);
+    background: var(--bg-secondary);
     outline: none;
     box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
   }
@@ -548,33 +548,34 @@ import Layout from "../../layouts/Layout.astro";
   :global(.custom-select-trigger) { 
     width: 100%;
     padding: 12px 16px; 
-    border: 2px solid #e2e8f0; 
+    border: 2px solid var(--border-color); 
     border-radius: 12px;
-    background: #f8fafc; 
+    background: var(--bg-primary); 
     cursor: pointer; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
     font-weight: 500; 
     font-size: 0.95rem;
-    color: #1e293b;
+    color: var(--text-main);
     box-sizing: border-box;
+    transition: all 0.2s;
   }
-  :global(.custom-select-trigger.active) { border-color: #4a90e2; background: white; }
+  :global(.custom-select-trigger.active) { border-color: var(--primary); background: var(--bg-secondary); }
   :global(.custom-select-trigger.active .arrow) { transform: rotate(180deg); }
-  :global(.custom-select-trigger .arrow) { transition: transform 0.3s; color: #94a3b8; }
+  :global(.custom-select-trigger .arrow) { transition: transform 0.3s; color: var(--text-muted); }
   
   :global(.custom-options) { 
-    position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: white; 
-    border: 2px solid #e2e8f0; border-radius: 12px; z-index: 100; display: none; 
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: var(--bg-secondary); 
+    border: 2px solid var(--border-color); border-radius: 12px; z-index: 100; display: none; 
+    box-shadow: var(--shadow-md);
     max-height: 180px;
     overflow-y: auto;
   }
   :global(.custom-options.active) { display: block; }
-  :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: #475569; text-align: left; }
-  :global(.option:hover) { background: #f1f5f9; color: #4a90e2; }
-  :global(.option.selected) { background: #eff6ff; color: #4a90e2; font-weight: 700; }
+  :global(.option) { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; color: var(--text-main); text-align: left; }
+  :global(.option:hover) { background: var(--bg-primary); color: var(--primary); }
+  :global(.option.selected) { background: var(--bg-primary); color: var(--primary); font-weight: 700; }
 
   .botones-filtros {
     display: flex;
@@ -589,10 +590,10 @@ import Layout from "../../layouts/Layout.astro";
 
   .tabla-container {
     width: 100%;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 20px;
     overflow-x: auto;
-    background: #f8fafc;
+    background: var(--bg-secondary);
   }
   table {
     width: 100%;
@@ -600,34 +601,35 @@ import Layout from "../../layouts/Layout.astro";
     min-width: 800px;
   }
   th {
-    background: #f1f5f9;
+    background: var(--bg-primary);
     padding: 1.25rem;
     text-align: center;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #475569;
+    color: var(--text-muted);
     font-weight: 800;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-color);
   }
   td {
     padding: 1.5rem 1.25rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border-color);
     text-align: center;
     font-size: 0.95rem;
     line-height: 1.5;
+    color: var(--text-main);
   }
   tr:hover {
-    background: #f1f5f9;
+    background: var(--bg-primary);
   }
 
   .nombre {
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-main);
   }
   :global(.sin-registros) {
     text-align: center;
-    color: #94a3b8;
+    color: var(--text-muted);
     padding: 5rem 1rem !important;
     font-style: italic;
     font-size: 1.1rem;
@@ -673,7 +675,15 @@ import Layout from "../../layouts/Layout.astro";
     transform: translateY(-2px);
     box-shadow: 0 12px 24px -4px rgba(39, 52, 105, 0.4);
   }
-  .btn-premium.outline { background: white; color: #64748b; border: 2px solid #e2e8f0; }
+  .btn-premium.outline { 
+    background: var(--bg-secondary); 
+    color: var(--text-muted); 
+    border: 2px solid var(--border-color); 
+  }
+  .btn-premium.outline:hover {
+    background: var(--bg-primary);
+    color: var(--text-main);
+  }
 
   /* Responsive Design */
   @media (max-width: 1024px) {

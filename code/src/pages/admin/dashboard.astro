@@ -256,7 +256,8 @@ const modules = [
       gap: 2rem;
       min-height: calc(100vh - 64px);
       padding: 3rem 8%;
-      background: #f8fafc !important;
+      background: var(--bg-primary) !important;
+      transition: background-color 0.3s ease;
     }
 
     .welcome-header { grid-column: 1 / span 2; margin-bottom: 1rem; }
@@ -278,8 +279,8 @@ const modules = [
       padding: 1.5rem !important;
       border-radius: 24px;
       height: 100%;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
     }
 
     .gradient-text {
@@ -295,8 +296,8 @@ const modules = [
       animation: shine 4s linear infinite !important;
     }
     .module-card {
-      background: white !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+      background: var(--bg-secondary) !important;
+      box-shadow: var(--shadow-md) !important;
     }
   }
 
@@ -308,9 +309,9 @@ const modules = [
     gap: 1.5rem;
     padding: 1.5rem 2rem !important;
     border-radius: 24px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
     border-top: 2px solid #4a90e2;
   }
   a.stat-card {

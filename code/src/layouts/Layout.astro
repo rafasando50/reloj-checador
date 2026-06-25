@@ -15,7 +15,7 @@ const isLoginPage = currentPath === "/" ||
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" class="preload">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -27,14 +27,78 @@ const isLoginPage = currentPath === "/" ||
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 		<title>{title || 'Sistema de Asistencia'}</title>
+		
+		<script is:inline>
+			(function() {
+				const theme = localStorage.getItem('theme') || 
+					(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+				if (theme === 'dark') {
+					document.documentElement.setAttribute('data-theme', 'dark');
+				} else {
+					document.documentElement.removeAttribute('data-theme');
+				}
+			})();
+		</script>
 	</head>
 	<body class={(isLoginPage || hideNavbar) ? "login-body" : ""}>
 		{!isLoginPage && !hideNavbar && <Navbar />}
+		
+		{(isLoginPage || hideNavbar) && (
+			<button id="theme-toggle-floating" class="theme-toggle-floating" aria-label="Cambiar tema">
+				<svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<circle cx="12" cy="12" r="4"></circle>
+					<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+				</svg>
+				<svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+				</svg>
+			</button>
+		)}
+		
 		<slot />
+
+		<script>
+			function setupThemeToggle() {
+				const themeToggleBtn = document.getElementById('theme-toggle');
+				const themeToggleFloatingBtn = document.getElementById('theme-toggle-floating');
+				
+				const handleToggle = () => {
+					const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+					if (isDark) {
+						document.documentElement.removeAttribute('data-theme');
+						localStorage.setItem('theme', 'light');
+					} else {
+						document.documentElement.setAttribute('data-theme', 'dark');
+						localStorage.setItem('theme', 'dark');
+					}
+				};
+
+				if (themeToggleBtn) {
+					themeToggleBtn.addEventListener('click', handleToggle);
+				}
+				if (themeToggleFloatingBtn) {
+					themeToggleFloatingBtn.addEventListener('click', handleToggle);
+				}
+			}
+
+			setupThemeToggle();
+			
+			// Remove preload class to enable transitions after page load
+			document.documentElement.classList.remove('preload');
+		</script>
 	</body>
 </html>
 
 <style is:global>
+  /* Prevent transitions on page load */
+  .preload * {
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -ms-transition: none !important;
+    -o-transition: none !important;
+    transition: none !important;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -44,12 +108,13 @@ const isLoginPage = currentPath === "/" ||
 		width: 100% !important;
 		min-width: 100% !important;
 		min-height: 100vh;
-    background: #f1f5f9;
+    background: var(--bg-primary);
     font-family: 'Inter', sans-serif;
-    color: #1e293b;
+    color: var(--text-main);
     overflow-x: hidden;
     display: block;
     padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
 	}
 
   body:not(.login-body) {
@@ -63,6 +128,36 @@ const isLoginPage = currentPath === "/" ||
     --title-dark: #273469;    /* El azul marino denso de "Registro de" */
     --text-muted: #64748b;
     --border-radius: 12px;
+
+    /* Theme-specific variables */
+    --bg-primary: #f1f5f9;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f8fafc;
+    --text-main: #1e293b;
+    --border-color: #e2e8f0;
+    --border-card: #f8fafc;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+  }
+
+  html[data-theme="dark"] {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --title-dark: #93c5fd;
+    --text-muted: #94a3b8;
+    
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #0f172a;
+    --text-main: #f8fafc;
+    --border-color: #334155;
+    --border-card: #1e293b;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
   }
 
   h1 {
@@ -79,8 +174,6 @@ const isLoginPage = currentPath === "/" ||
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-
-
 
   .btn-premium {
     min-width: 200px;
@@ -112,17 +205,322 @@ const isLoginPage = currentPath === "/" ||
   }
 
   .btn-premium.outline {
-    background: white;
-    color: #64748b;
-    border: 2px solid #e2e8f0;
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    border: 2px solid var(--border-color);
+  }
+
+  .btn-premium.outline:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-main);
   }
 
   /* Card estilo foto */
   .card-premium {
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 24px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f8fafc;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
     padding: 3.5rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  /* Theme toggle buttons */
+  .sun-icon { display: none !important; }
+  .moon-icon { display: block !important; }
+  html[data-theme="dark"] .sun-icon { display: block !important; }
+  html[data-theme="dark"] .moon-icon { display: none !important; }
+
+  /* Floating theme toggle button styling */
+  .theme-toggle-floating {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    transition: all 0.25s ease;
+    color: #64748b;
+  }
+
+  .theme-toggle-floating:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    color: #1e293b;
+  }
+
+  html[data-theme="dark"] .theme-toggle-floating {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+  }
+
+  html[data-theme="dark"] .theme-toggle-floating:hover {
+    color: #f8fafc;
+  }
+
+  /* --- GLOBAL DARK MODE OVERRIDES --- */
+  html[data-theme="dark"] h1.gradient-text,
+  html[data-theme="dark"] h1.titulo-principal,
+  html[data-theme="dark"] h1 {
+    background: linear-gradient(to right, #93c5fd 0%, #60a5fa 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+  }
+
+  html[data-theme="dark"] .dashboard-bg-decor .blob-1 {
+    background: radial-gradient(circle, #2563eb, transparent) !important;
+    opacity: 0.15 !important;
+  }
+
+  html[data-theme="dark"] .dashboard-bg-decor .blob-2 {
+    background: radial-gradient(circle, #d97706, transparent) !important;
+    opacity: 0.1 !important;
+  }
+
+  /* Cards of all kinds */
+  html[data-theme="dark"] .card-premium,
+  html[data-theme="dark"] .pvc-card,
+  html[data-theme="dark"] .login-card,
+  html[data-theme="dark"] .modal-content,
+  html[data-theme="dark"] .module-card,
+  html[data-theme="dark"] .stat-card,
+  html[data-theme="dark"] .recent-activity-aside,
+  html[data-theme="dark"] .employee-list-container,
+  html[data-theme="dark"] .tabla-container {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+
+  /* Specific module cards hover background override */
+  html[data-theme="dark"] .module-card:hover {
+    border-color: var(--primary) !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Inputs, selects and textareas */
+  html[data-theme="dark"] input,
+  html[data-theme="dark"] select,
+  html[data-theme="dark"] textarea,
+  html[data-theme="dark"] .input-premium,
+  html[data-theme="dark"] .input-premium-search {
+    background: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+  }
+
+  html[data-theme="dark"] input:focus,
+  html[data-theme="dark"] select:focus,
+  html[data-theme="dark"] textarea:focus,
+  html[data-theme="dark"] .input-premium:focus,
+  html[data-theme="dark"] .input-premium-search:focus {
+    border-color: var(--primary) !important;
+    background: var(--bg-secondary) !important;
+  }
+
+  /* Labels */
+  html[data-theme="dark"] label,
+  html[data-theme="dark"] .input-group label {
+    color: var(--text-muted) !important;
+  }
+
+  /* Headings & Text */
+  html[data-theme="dark"] .main-title,
+  html[data-theme="dark"] .employee-name,
+  html[data-theme="dark"] .welcome-header h1,
+  html[data-theme="dark"] .section-header h3,
+  html[data-theme="dark"] .module-info h2,
+  html[data-theme="dark"] .stat-value,
+  html[data-theme="dark"] .modal-content h2,
+  html[data-theme="dark"] .modal h2 {
+    color: var(--text-main) !important;
+  }
+
+  html[data-theme="dark"] .subtitle,
+  html[data-theme="dark"] .module-info p,
+  html[data-theme="dark"] .stat-label,
+  html[data-theme="dark"] .recent-name-new,
+  html[data-theme="dark"] .info-item .label,
+  html[data-theme="dark"] .modal-content p,
+  html[data-theme="dark"] .modal p,
+  html[data-theme="dark"] .admin-link,
+  html[data-theme="dark"] .scanner-placeholder {
+    color: var(--text-muted) !important;
+  }
+
+  /* Modals */
+  html[data-theme="dark"] .modal,
+  html[data-theme="dark"] :global(.modal-overlay) {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  /* Table styling */
+  html[data-theme="dark"] table {
+    color: var(--text-main) !important;
+  }
+  html[data-theme="dark"] th {
+    background: var(--bg-primary) !important;
+    color: var(--text-muted) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  html[data-theme="dark"] td {
+    border-top: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+  }
+  html[data-theme="dark"] tr:hover,
+  html[data-theme="dark"] .employee-row:hover {
+    background: var(--bg-primary) !important;
+  }
+  html[data-theme="dark"] .employee-row {
+    border-bottom-color: var(--border-color) !important;
+  }
+  html[data-theme="dark"] .employee-header {
+    background: var(--bg-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+  }
+  html[data-theme="dark"] .employee-row.row-inactive {
+    background: rgba(15, 23, 42, 0.2) !important;
+  }
+  html[data-theme="dark"] .nombre {
+    color: var(--text-main) !important;
+  }
+  html[data-theme="dark"] :global(.id-code),
+  html[data-theme="dark"] .id-code {
+    background: var(--bg-primary) !important;
+    color: var(--text-muted) !important;
+  }
+
+  /* Custom dropdown/select lists in dark mode */
+  html[data-theme="dark"] :global(.custom-select-trigger),
+  html[data-theme="dark"] .custom-select-trigger {
+    background: var(--bg-primary) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+  }
+  html[data-theme="dark"] :global(.custom-select-trigger.active),
+  html[data-theme="dark"] .custom-select-trigger.active {
+    background: var(--bg-secondary) !important;
+  }
+  html[data-theme="dark"] :global(.custom-options),
+  html[data-theme="dark"] .custom-options {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+  }
+  html[data-theme="dark"] :global(.option),
+  html[data-theme="dark"] .option,
+  html[data-theme="dark"] :global(.option-puntualidad),
+  html[data-theme="dark"] .option-puntualidad {
+    color: var(--text-main) !important;
+  }
+  html[data-theme="dark"] :global(.option:hover),
+  html[data-theme="dark"] .option:hover,
+  html[data-theme="dark"] :global(.option-puntualidad:hover),
+  html[data-theme="dark"] .option-puntualidad:hover {
+    background: var(--bg-primary) !important;
+    color: var(--primary) !important;
+  }
+  html[data-theme="dark"] :global(.option.selected),
+  html[data-theme="dark"] .option.selected,
+  html[data-theme="dark"] :global(.option-puntualidad.selected),
+  html[data-theme="dark"] .option-puntualidad.selected {
+    background: var(--bg-primary) !important;
+    color: var(--primary) !important;
+  }
+
+  /* Tab buttons for filtering */
+  html[data-theme="dark"] .company-tabs {
+    background: var(--bg-primary) !important;
+  }
+  html[data-theme="dark"] :global(.tab-btn),
+  html[data-theme="dark"] .tab-btn {
+    color: var(--text-muted) !important;
+  }
+  html[data-theme="dark"] :global(.tab-btn.active),
+  html[data-theme="dark"] .tab-btn.active {
+    background: var(--bg-secondary) !important;
+    color: var(--primary) !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  /* Scan and check screens */
+  html[data-theme="dark"] .scanner-box {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+  }
+  html[data-theme="dark"] .scanner-placeholder {
+    background: var(--bg-secondary) !important;
+  }
+  html[data-theme="dark"] .btn-config-estacion {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+  }
+  html[data-theme="dark"] .btn-config-estacion:hover {
+    background: var(--bg-secondary) !important;
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+  html[data-theme="dark"] .radio-btn input:not(:checked) + .radio-texto {
+    background: var(--bg-secondary) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* Toggle switches */
+  html[data-theme="dark"] .switch {
+    background: #475569 !important;
+  }
+  html[data-theme="dark"] .toggle-inactive input:checked + .switch {
+    background: var(--primary) !important;
+  }
+
+  /* Action buttons outline */
+  html[data-theme="dark"] .btn-action.edit {
+    border-color: var(--border-color) !important;
+    color: #60a5fa !important;
+  }
+  html[data-theme="dark"] .btn-action.edit:hover {
+    background: #1e3a8a !important;
+    color: white !important;
+    border-color: #1e3a8a !important;
+  }
+
+  /* Credential Card adaption */
+  html[data-theme="dark"] .pvc-card {
+    background: #1e293b !important;
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8) !important;
+  }
+  html[data-theme="dark"] .pvc-card .employee-name {
+    color: #f8fafc !important;
+  }
+  html[data-theme="dark"] .pvc-card .info-item .value {
+    color: #93c5fd !important;
+  }
+  html[data-theme="dark"] .pvc-card .info-item .label {
+    color: #94a3b8 !important;
+  }
+  html[data-theme="dark"] .btn-logout-premium {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+  }
+  html[data-theme="dark"] .btn-logout-premium:hover {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: #ef4444 !important;
   }
 </style>
