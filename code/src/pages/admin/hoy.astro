@@ -133,7 +133,7 @@ import Layout from "../../layouts/Layout.astro";
   async function cargarEmpresas() {
     try {
       const res = await fetch("/api/companies.php");
-      const companies = await res.json();
+      const companies = (await res.json()) as Array<{ name: string }>;
       const optionsContainer = document.getElementById("company-options");
       if (optionsContainer) {
         // Mantener la opción "Todas"
@@ -153,7 +153,7 @@ import Layout from "../../layouts/Layout.astro";
     }
   }
 
-  function seleccionarEmpresa(name) {
+  function seleccionarEmpresa(name: string) {
     const hiddenInput = document.getElementById(
       "filtro-empresa",
     ) as HTMLInputElement;
@@ -206,7 +206,7 @@ import Layout from "../../layouts/Layout.astro";
     });
   });
 
-  window.addEventListener("click", (e) => {
+  window.addEventListener("click", (e: MouseEvent) => {
     if (
       !trigger?.contains(e.target as Node) &&
       !options?.contains(e.target as Node)
@@ -227,7 +227,7 @@ import Layout from "../../layouts/Layout.astro";
     const res = await fetch(
       `/api/daily.php?search=${encodeURIComponent(search)}&company=${encodeURIComponent(empresa)}`,
     );
-    const data = await res.json();
+    const data = (await res.json()) as any[];
 
     const cuerpo = document.getElementById("tabla-cuerpo");
     if (cuerpo) {
@@ -237,7 +237,7 @@ import Layout from "../../layouts/Layout.astro";
       } else {
         cuerpo.innerHTML = data
           .map(
-            (row) => `
+            (row: any) => `
           <tr>
             <td class="nombre">${row.full_name}</td>
             <td>${row.entrada ? new Date(row.entrada).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}</td>
@@ -282,7 +282,15 @@ import Layout from "../../layouts/Layout.astro";
   });
 
   // Función para mostrar ventana emergente premium en la misma página
-  function mostrarMensaje({ titulo, mensaje, tipo = "success" }) {
+  function mostrarMensaje({
+    titulo,
+    mensaje,
+    tipo = "success",
+  }: {
+    titulo: string;
+    mensaje: string;
+    tipo?: "success" | "info" | "error";
+  }) {
     // Eliminar modal anterior si existe
     document.getElementById("modal-custom-reporte")?.remove();
 

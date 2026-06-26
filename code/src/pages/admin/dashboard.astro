@@ -14,21 +14,21 @@ const modules = [
     description: "Ver quién está trabajando en este momento",
     icon: "calendar",
     link: "/admin/hoy",
-    color: "#273469",
+    color: "#4A90E2",
   },
   {
     title: "Reportes",
     description: "Historial completo y exportación a Excel",
     icon: "file-text",
     link: "/admin/reportes",
-    color: "#64748b",
+    color: "#4A90E2",
   },
   {
     title: "Personal",
     description: "Administrar empleados, altas y bajas",
     icon: "users",
     link: "/admin/empleados",
-    color: "#1e293b",
+    color: "#4A90E2",
   },
 ];
 ---
@@ -56,7 +56,7 @@ const modules = [
         if (!data.recent || data.recent.length === 0) {
           list.innerHTML = '<div class="empty-state">No hay actividad hoy</div>';
         } else {
-          list.innerHTML = data.recent.map((r) => {
+          list.innerHTML = data.recent.map((r: any) => {
             const statusClass = (r.puntualidad || 'a-tiempo').toLowerCase().replace(/\s+/g, '-');
             return `
               <div class="recent-item-new">
@@ -337,12 +337,12 @@ const modules = [
     display: block;
     font-size: 1.8rem;
     font-weight: 900;
-    color: #1e293b;
+    color: var(--text-main);
     line-height: 1;
   }
   .stat-label {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 600;
   }
 
@@ -357,7 +357,7 @@ const modules = [
     margin: 0;
     font-size: 1.1rem;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
   }
   .view-all {
     font-size: 0.8rem;
@@ -396,12 +396,12 @@ const modules = [
   }
   :global(.recent-name-new) {
     font-size: 0.95rem;
-    color: #64748b;
+    color: var(--text-main);
     font-weight: 500;
   }
   :global(.recent-time-new) {
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-weight: 600;
   }
 
@@ -504,12 +504,12 @@ const modules = [
     margin: 0 0 4px 0;
     font-size: 1.4rem;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
   }
 
   .module-info p {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
     line-height: 1.4;
     font-weight: 500;
     font-size: 0.95rem;
