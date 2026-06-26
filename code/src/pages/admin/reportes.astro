@@ -32,7 +32,7 @@ import Layout from "../../layouts/Layout.astro";
               </div>
               <div class="custom-options" id="company-options">
                 <div class="option selected" data-value="">Todas</div>
-                {/* Cargado dinámicamente */}
+                <!-- Cargado dinámicamente -->
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@ import Layout from "../../layouts/Layout.astro";
   async function cargarEmpresas() {
     try {
       const res = await fetch("/api/companies.php");
-      const companies = await res.json();
+      const companies = (await res.json()) as Array<{ name: string }>;
       const optionsContainer = document.getElementById("company-options");
       if (optionsContainer) {
         optionsContainer.innerHTML = '<div class="option selected" data-value="">Todas</div>';
@@ -176,7 +176,7 @@ import Layout from "../../layouts/Layout.astro";
     }
   }
 
-  function seleccionarEmpresa(name) {
+  function seleccionarEmpresa(name: string) {
     const hiddenInput = document.getElementById('filtro-empresa') as HTMLInputElement;
     if (hiddenInput) hiddenInput.value = name;
     const labelEl = document.getElementById('selected-company-label');
@@ -361,7 +361,7 @@ import Layout from "../../layouts/Layout.astro";
     const res = await fetch(
       `/api/reports.php?start=${inicio}&end=${fin}&search=${encodeURIComponent(search)}&company=${encodeURIComponent(empresa)}`,
     );
-    let data = await res.json();
+    let data = (await res.json()) as any[];
 
     if (puntualidadFilter) {
       data = data.filter((r: any) => r.puntualidad === puntualidadFilter);
@@ -420,10 +420,12 @@ import Layout from "../../layouts/Layout.astro";
 
       // Colorear celda de puntualidad
       const celdaPuntualidad = row.getCell('puntualidad');
-      celdaPuntualidad.font = { bold: true };
-      if (r.puntualidad === 'A Tiempo') celdaPuntualidad.font.color = { argb: 'FF059669' }; // Verde
-      else if (r.puntualidad === 'Retardo') celdaPuntualidad.font.color = { argb: 'FFD97706' }; // Naranja
-      else if (r.puntualidad === 'Falta') celdaPuntualidad.font.color = { argb: 'FFDC2626' }; // Rojo
+      let colorARGB = 'FF000000';
+      if (r.puntualidad === 'A Tiempo') colorARGB = 'FF059669'; // Verde
+      else if (r.puntualidad === 'Retardo') colorARGB = 'FFD97706'; // Naranja
+      else if (r.puntualidad === 'Falta') colorARGB = 'FFDC2626'; // Rojo
+      
+      celdaPuntualidad.font = { bold: true, color: { argb: colorARGB } };
     });
 
     // Descargar archivo
