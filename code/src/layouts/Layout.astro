@@ -12,6 +12,7 @@ const isLoginPage = currentPath === "/" ||
                     currentPath === "/index.html" || 
                     currentPath === "/admin/login" || 
                     currentPath === "/admin/login.html";
+const isCredentialPage = currentPath.includes("/credential");
 ---
 
 <!doctype html>
@@ -30,6 +31,10 @@ const isLoginPage = currentPath === "/" ||
 		
 		<script is:inline>
 			(function() {
+				if (window.location.pathname.includes('/credential')) {
+					document.documentElement.removeAttribute('data-theme');
+					return;
+				}
 				const theme = localStorage.getItem('theme') || 
 					(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 				if (theme === 'dark') {
@@ -43,7 +48,7 @@ const isLoginPage = currentPath === "/" ||
 	<body class={(isLoginPage || hideNavbar) ? "login-body" : ""}>
 		{!isLoginPage && !hideNavbar && <Navbar />}
 		
-		{(isLoginPage || hideNavbar) && (
+		{(isLoginPage || hideNavbar) && !isCredentialPage && (
 			<button id="theme-toggle-floating" class="theme-toggle-floating" aria-label="Cambiar tema">
 				<svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<circle cx="12" cy="12" r="4"></circle>
@@ -59,6 +64,9 @@ const isLoginPage = currentPath === "/" ||
 
 		<script>
 			function setupThemeToggle() {
+				if (window.location.pathname.includes('/credential')) {
+					return;
+				}
 				const themeToggleBtn = document.getElementById('theme-toggle');
 				const themeToggleFloatingBtn = document.getElementById('theme-toggle-floating');
 				
